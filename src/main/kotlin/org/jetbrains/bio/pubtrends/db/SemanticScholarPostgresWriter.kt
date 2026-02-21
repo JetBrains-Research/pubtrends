@@ -127,8 +127,8 @@ open class SemanticScholarPostgresWriter(
         LOG.info("Reset transaction finished")
     }
 
-    override fun store(articles: List<SemanticScholarArticle>) {
-        LOG.info("Store batch of ${articles.size} articles")
+    override fun store(articles: List<SemanticScholarArticle>, isBaseline: Boolean) {
+        LOG.info("Store batch of ${articles.size} articles (baseline: $isBaseline)")
         val citationsList = articles.map { it.citations.distinct().map { cit -> it.ssid to cit } }.flatten()
         store(articles, citationsList)
     }

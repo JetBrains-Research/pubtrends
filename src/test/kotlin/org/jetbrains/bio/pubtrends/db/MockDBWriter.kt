@@ -15,8 +15,8 @@ class MockDBWriter<T>(private val batch: Boolean = false) : AbstractDBWriter<T> 
         private val LOG = LoggerFactory.getLogger(MockDBWriter::class.java)
     }
 
-    override fun store(articles: List<T>) {
-        LOG.info("Attempted to store ${articles.size} articles")
+    override fun store(articles: List<T>, isBaseline: Boolean) {
+        LOG.info("Attempted to store ${articles.size} articles (baseline: $isBaseline)")
         if (batch) {
             this.articles.addAll(articles)
             articlesStored += articles.size

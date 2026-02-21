@@ -2,10 +2,7 @@ package org.jetbrains.bio.pubtrends.db
 
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
@@ -104,21 +101,59 @@ open class PubmedPostgresWriter(
         LOG.info("Reset transaction finished")
     }
 
-    override fun store(articles: List<PubmedArticle>) {
-        LOG.info("Store ${articles.size} articles")
-        val citationsForArticle = articles.map { it.citations.toSet().map { cit -> it.pmid to cit } }.flatten()
-        store(articles, citationsForArticle)
+    override fun store(articles: List<PubmedArticle>, isBaseline: Boolean) {
+        LOG.info("Store ${articles.size} articles (baseline: $isBaseline)")
+        val citationsForArticle = articles.flatMap { it.citations.toSet().map { cit -> it.pmid to cit } }
+        store(articles, citationsForArticle, isBaseline)
     }
 
     internal fun store(
         articles: List<PubmedArticle>,
-        citationsList: List<Pair<Int, Int>>
+        citationsList: List<Pair<Int, Int>>,
+        isBaseline: Boolean = false
     ) {
         LOG.info("Store transaction started")
         transaction {
+            val articlesToStore = if (isBaseline) {
+                // For baseline files, filter out articles that already exist in the database
+                // BUT include those with missing references that now have citations to add
+                val pmids = articles.map { it.pmid }
+                val existingPmids = PMPublications.select { PMPublications.pmid inList pmids }
+                    .map { it[PMPublications.pmid] }
+                    .toSet()
+
+                // Find PMIDs that exist but have no citations AND have references in the incoming data
+                val pmidsWithoutCitations = if (existingPmids.isNotEmpty()) {
+                    val articlesWithReferences = articles.filter { it.citations.isNotEmpty() }.map { it.pmid }.toSet()
+                    PMPublications.leftJoin(PMCitations, { PMPublications.pmid }, { PMCitations.pmidOut })
+                        .select {
+                            (PMPublications.pmid inList existingPmids) and
+                            (PMCitations.pmidOut.isNull())
+                        }
+                        .map { it[PMPublications.pmid] }
+                        .toSet()
+                        .filter { it in articlesWithReferences }
+                        .toSet()
+                } else {
+                    emptySet()
+                }
+
+                val filtered = articles.filter { it.pmid !in existingPmids || it.pmid in pmidsWithoutCitations }
+                LOG.info("Baseline: ${articles.size} articles, ${existingPmids.size} already exist, ${pmidsWithoutCitations.size} with missing references that have new citations, ${filtered.size} to process")
+                filtered
+            } else {
+                articles
+            }
+
+            if (articlesToStore.isEmpty()) {
+                LOG.info("No articles to store")
+                return@transaction
+            }
+
+            // For updates: insert or update records
             LOG.info("Batch insert or update publications")
             PMPublications.batchInsertOnDuplicateKeyUpdate(
-                articles, listOf(PMPublications.pmid),
+                articlesToStore, listOf(PMPublications.pmid),
                 listOf(
                     PMPublications.title,
                     PMPublications.abstract,
@@ -142,18 +177,23 @@ open class PubmedPostgresWriter(
                 conflict[doi] = article.doi
                 conflict[aux] = article.aux
             }
+
             LOG.info("Update TSV vector")
-            val vals = articles.map { it.pmid }.joinToString(",") { "($it)" }
+            val vals = articlesToStore.map { it.pmid }.joinToString(",") { "($it)" }
             exec(
                 """
                     UPDATE PMPublications
-                    set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
+                    set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
                         setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
                     WHERE pmid IN (VALUES $vals);
                     """
             )
-            LOG.info("Batch insert citations")
-            PMCitations.batchInsert(citationsList, ignore = true) { citation ->
+
+            // Filter citations to only include those for articles we're actually storing
+            val storedPmids = articlesToStore.map { it.pmid }.toSet()
+            val citationsToStore = citationsList.filter { it.first in storedPmids }
+            LOG.info("Batch insert citations (${citationsToStore.size} citations)")
+            PMCitations.batchInsert(citationsToStore, ignore = true) { citation ->
                 this[PMCitations.pmidOut] = citation.first
                 this[PMCitations.pmidIn] = citation.second
             }

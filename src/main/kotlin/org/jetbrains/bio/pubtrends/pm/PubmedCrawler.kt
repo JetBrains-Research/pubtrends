@@ -142,7 +142,7 @@ class PubmedCrawler(
 
             try {
                 LOG.info("$progressPrefix $localArchiveName: Parsing...")
-                xmlParser.parse(localArchiveName)
+                xmlParser.parse(localArchiveName, isBaseline)
             } catch (e: XMLStreamException) {
                 throw PubmedCrawlerException("Failed to parse $localArchiveName", e)
             } finally {

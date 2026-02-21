@@ -83,7 +83,7 @@ class PubmedXMLParser(
     // Stats about XML tags
     val tags = HashMap<String, Int>()
 
-    fun parse(name: String): Boolean {
+    fun parse(name: String, isBaseline: Boolean = false): Boolean {
         try {
             val file = File(name)
             LOG.debug("File location: ${file.absolutePath}")
@@ -92,7 +92,7 @@ class PubmedXMLParser(
             else // for tests
                 BufferedInputStream(FileInputStream(file))
             `in`.use {
-                parseData(factory.createXMLEventReader(it))
+                parseData(factory.createXMLEventReader(it), isBaseline)
             }
         } catch (e: XMLStreamException) {
             LOG.error("Failed to parse $name", e)
@@ -102,7 +102,7 @@ class PubmedXMLParser(
         return true
     }
 
-    private fun parseData(eventReader: XMLEventReader) {
+    private fun parseData(eventReader: XMLEventReader, isBaseline: Boolean = false) {
         // Stats about articles & tags
         var articleCounter = 0
         var keywordCounter = 0
@@ -450,14 +450,14 @@ class PubmedXMLParser(
 
             // Store articles if reached preferred size of the batch
             if ((batchSize > 0) && (articleList.size == batchSize)) {
-                storeArticles()
+                storeArticles(isBaseline)
                 articleList.clear()
             }
         }
 
         // Store final batch of articles if not empty
         if (articleList.size > 0) {
-            storeArticles()
+            storeArticles(isBaseline)
         }
 
         // Delete articles if needed
@@ -473,10 +473,10 @@ class PubmedXMLParser(
         )
     }
 
-    private fun storeArticles() {
+    private fun storeArticles(isBaseline: Boolean = false) {
         LOG.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
 
-        dbWriter.store(articleList)
+        dbWriter.store(articleList, isBaseline)
         articlesStored += articleList.size
     }
 }
