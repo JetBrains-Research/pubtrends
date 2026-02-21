@@ -20,11 +20,17 @@ class PubmedFTPHandler {
 
         const val TIMEOUT_MS = 20000
         const val DOWNLOAD_TIMEOUT_MS = 100000L
-        const val YEAR = 25
 
-        fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed${YEAR}n", ".xml.gz").toInt()
+        private val PUBMED_FILE_REGEX = Regex("""pubmed(\d{2})n(\d{4,5})\.xml\.gz""")
 
-        fun idToPubmedFile(id: Int): String = "pubmed${YEAR}n${id.toString().padStart(4, '0')}.xml.gz"
+        fun pubmedFileToId(name: String): Int {
+            val match = PUBMED_FILE_REGEX.matchEntire(name)
+                ?: throw IllegalArgumentException("Invalid PubMed filename format: $name")
+            return match.groupValues[2].toInt()
+        }
+
+        fun idToPubmedFile(id: Int, year: Int = java.time.Year.now().value % 100): String =
+            "pubmed${year.toString().padStart(2, '0')}n${id.toString().padStart(4, '0')}.xml.gz"
     }
 
     fun fetch(lastId: Int = 0): Pair<List<String>, List<String>> {

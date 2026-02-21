@@ -34,6 +34,9 @@ class PubmedCrawler(
      */
     fun update(lastIdCmd: Int?): Boolean {
         var lastId = 0
+        var lastYear = 0
+        val currentYear = java.time.Year.now().value % 100
+
         if (lastIdCmd == null) {
             if (Files.exists(progressTSV)) {
                 LOG.info("Found crawler progress $progressTSV")
@@ -44,8 +47,19 @@ class PubmedCrawler(
                             chunks.size == 2 && chunks[0] == "lastId" -> {
                                 lastId = chunks[1].toInt()
                             }
+                            chunks.size == 2 && chunks[0] == "lastYear" -> {
+                                lastYear = chunks[1].toInt()
+                            }
                         }
                     }
+                }
+
+                // Reset lastId if year has changed
+                // If lastYear is 0 (not recorded), assume the previous year to trigger reset if needed
+                val yearToCheck = if (lastYear == 0) currentYear - 1 else lastYear
+                if (yearToCheck != currentYear) {
+                    LOG.info("Year changed from $yearToCheck to $currentYear, resetting lastId")
+                    lastId = 0
                 }
             }
         } else {
@@ -53,7 +67,7 @@ class PubmedCrawler(
         }
 
         if (lastId > 0) {
-            LOG.info("Last downloaded file: ${PubmedFTPHandler.idToPubmedFile(lastId)}")
+            LOG.info("Last downloaded file: ${PubmedFTPHandler.idToPubmedFile(lastId, currentYear)}")
         }
 
         try {
@@ -138,9 +152,11 @@ class PubmedCrawler(
             LOG.info("$progressPrefix $localArchiveName: SUCCESS")
 
             // Save progress information to be able to recover from Ctrl-C/kill signals
-            LOG.debug("$progressPrefix Save progress to $progressTSV")
+            LOG.debug("{} Save progress to {}", progressPrefix, progressTSV)
             BufferedWriter(FileWriter(progressTSV.toFile())).use {
-                it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
+                val currentYear = java.time.Year.now().value % 100
+                it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}\n")
+                it.write("lastYear\t$currentYear")
             }
         }
     }
