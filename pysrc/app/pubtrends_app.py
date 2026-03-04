@@ -104,16 +104,17 @@ def log_request(r):
 @pubtrends_app.route('/')
 @cache.cached(unless=lambda: not pubtrends_app.config.get(PREDEFINED_TASKS_READY_KEY, False))
 def index():
-    if not are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
-        return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
-
     search_example_message = ''
     search_example_source = ''
     search_example_terms = []
     search_example_papers = []
     semantic_search_example_terms = []
 
-    if len(PREDEFINED_JOBS) != 0:
+    # Check if predefined jobs are ready, but don't block if they're not
+    predefined_ready = are_predefined_jobs_ready(pubtrends_app, pubtrends_celery)
+
+    # Only show examples if they are already precomputed
+    if predefined_ready and len(PREDEFINED_JOBS) != 0:
         search_example_source, example_terms = random.choice(list(PREDEFINED_JOBS.items()))
         search_example_papers = [(*q.split('='), jobid) for q, jobid in example_terms
                                  if is_paper_predefined(jobid)]
@@ -532,11 +533,19 @@ init_admin(pubtrends_app, pubtrends_celery, logfile)
 # Additional features #
 #######################
 
+# Check and launch predefined searches on startup
+def startup_predefined_checks():
+    logger.info('Starting predefined jobs check on startup')
+    are_predefined_jobs_ready(pubtrends_app, pubtrends_celery)
+    logger.info('Predefined jobs check completed')
+
+
 # Application
 def get_app():
+    startup_predefined_checks()
     return pubtrends_app
 
 
 # With debug=True, the Flask server will auto-reload on changes
 if __name__ == '__main__':
-    pubtrends_app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)
+    get_app().run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)
