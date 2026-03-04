@@ -1,11 +1,8 @@
 import logging
-import os
-from threading import Lock
-
 import numpy as np
+import os
 import requests
 from gensim.models import KeyedVectors
-from lazy import lazy
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +18,14 @@ else:
     raise RuntimeError('Failed to configure model directory')
 
 
+class FastTextModel:
 
-class FastTextModelCache:
-    @lazy
+    def __init__(self):
+        logger.info('Initializing FastTextModel')
+        # noinspection PyStatementEffect
+        self.download_and_load_model
+        logger.info('FastTextModel initialized')
+
     def download_and_load_model(self):
         # Extract filename from URL
         model_name = os.path.basename(FASTTEXT_MODEL_URL)
@@ -58,9 +60,8 @@ class FastTextModelCache:
             for t in tokens
         ])
 
-FASTTEXT_MODEL_CACHE = FastTextModelCache()
 
-FASTTEXT_MODEL_CACHE_LOCK = Lock()
-
-
+logger.info('Prepare embeddings pretrained model')
+FASTTEXT_MODEL = FastTextModel()
+logger.info('Model is ready')
 
