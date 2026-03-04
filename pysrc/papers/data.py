@@ -8,6 +8,8 @@ from scipy.sparse import csr_matrix
 
 
 class AnalysisData:
+    VERSION = 1  # Increment this when making backwards-incompatible changes
+
     def __init__(self,
                  analysis_type,
                  search_query, search_ids,
@@ -57,6 +59,7 @@ class AnalysisData:
         )
 
         return dict(
+            version=self.VERSION,
             analysis_type=self.analysis_type,
             search_query=self.search_query,
             search_ids=self.search_ids,
@@ -89,6 +92,13 @@ class AnalysisData:
         """
         Load from JSON-serializable dict.
         """
+        # Check version compatibility
+        data_version = fields.get('version', 0)  # Default to 0 for old data without version
+        if data_version != AnalysisData.VERSION:
+            raise ValueError(
+                f"Cannot load data version {data_version}: current version {AnalysisData.VERSION}."
+            )
+
         analysis_type = fields['analysis_type']
         search_ids = fields['search_ids']
         search_query = fields['search_query']
