@@ -49,12 +49,12 @@ class EmbeddingsDBConnector:
 
             query = f'''
                     CREATE EXTENSION IF NOT EXISTS vector;
-                    create table {self.embeddings_model_name}(
+                    create table if not exists {self.embeddings_model_name}(
                         pmid    integer,
                         chunk   integer,
                         embedding vector({self.embedding_dimension})
                     );
-                    CREATE INDEX pmid_chunk_idx_{self.embeddings_model_name}
+                    CREATE INDEX IF NOT EXISTS pmid_chunk_idx_{self.embeddings_model_name}
                     ON {self.embeddings_model_name}(pmid, chunk);
                     '''
             with connection.cursor() as cursor:
