@@ -60,17 +60,6 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
     if config.feature_journals_enabled:
         result['journal_statistics'] = plotter.journal_statistics()
 
-    result['feature_numbers_enabled'] = config.feature_numbers_enabled
-    if config.feature_numbers_enabled:
-        url_prefix = Loaders.get_url_prefix(data.source)
-        if data.numbers_df is not None:
-            result['numbers'] = [
-                (row['id'], url_prefix + str(row['id']), trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
-                for _, row in data.numbers_df.iterrows()
-            ]
-
-    result['feature_questions_enabled'] = config.feature_questions_enabled and is_texts_embeddings_available()
-
     return result
 
 def prepare_search_string(topic, word, author, journal, papers_list) -> tuple[int, str]:

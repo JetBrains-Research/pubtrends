@@ -13,7 +13,6 @@ from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_te
     similarity
 from pysrc.papers.analysis.metadata import get_popular_authors, get_popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
-from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import embeddings, vectorize_corpus, chunks_to_text_embeddings
 from pysrc.papers.compute_or_load import compute_or_load
 from pysrc.papers.data import AnalysisData
@@ -35,7 +34,7 @@ class PapersAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self, config):
-        return 8 + config.feature_authors_enabled + config.feature_journals_enabled + config.feature_numbers_enabled
+        return 8 + config.feature_authors_enabled + config.feature_journals_enabled
 
     def set_current_step(self, step=2):
         self.current_step = step
@@ -263,14 +262,6 @@ class PapersAnalyzer:
                                current=self.get_step_and_inc(), task=task)
             self.journal_stats = get_popular_journals(self.df, n=POPULAR_JOURNALS)
 
-        self.numbers_df = None
-        if self.config.feature_numbers_enabled:
-            if len(self.df) >= 0:
-                self.progress.info('Extracting quantitative features from abstracts texts',
-                                   current=self.get_step_and_inc(), task=task)
-                self.numbers_df = extract_numbers(self.df)
-            else:
-                logger.debug('Not enough papers for numbers extraction')
         logger.debug('Analysis finished')
 
     @staticmethod
@@ -315,5 +306,4 @@ class PapersAnalyzer:
             papers_graph=self.papers_graph,
             author_stats=self.author_stats,
             journal_stats=self.journal_stats,
-            numbers_df=self.numbers_df,
         )

@@ -221,7 +221,6 @@ class PubtrendsConfig:
         self.feature_semantic_search_enabled = params.getboolean('feature_semantic_search_enabled')
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
         self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
-        self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
         self.feature_questions_enabled = params.getboolean('feature_questions_enabled')
 
         # Admin bootstrap credentials
