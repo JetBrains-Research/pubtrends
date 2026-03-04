@@ -66,7 +66,7 @@ class WorkManager:
                 if self.embeddings_db_connector is not None:
                     self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
                 if self.faiss_connector is not None:
-                    self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
+                    self.faiss_connector.store_embeddings(chunk_idx, chunk_embeddings)
             except queue.Empty:
                 continue
 
@@ -80,7 +80,7 @@ class WorkManager:
                 if self.embeddings_db_connector is not None:
                     self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
                 if self.faiss_connector is not None:
-                    self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
+                    self.faiss_connector.store_embeddings(chunk_idx, chunk_embeddings)
             except queue.Empty:
                 continue
 
@@ -124,10 +124,10 @@ class WorkManager:
     def store_embeddings_to_faiss_work(self):
         while True:
             try:
-                chunk_embeddings, chunk_idx = self.embeddings_queue.get(timeout=1)  # Blocking with timeout
-                if chunk_embeddings is None:  # Sentinel value
+                chunk_idx, chunk_embeddings = self.embeddings_queue.get(timeout=1)  # Blocking with timeout
+                if chunk_idx is None:  # Sentinel value
                     break
-                self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
+                self.faiss_connector.store_embeddings(chunk_idx, chunk_embeddings)
             except queue.Empty:
                 continue
 
