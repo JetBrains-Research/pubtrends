@@ -5,11 +5,11 @@ description = "Python components for Pubtrends"
 requires-python = "==3.12.*"
 dependencies = [
     "pip",
-    "bokeh",
+    "bokeh==3.8.2",
     "cachetools",
     "celery",
     "fastparquet",
-    "flask",
+    "flask==3.1.3",
     "flask-admin",
     "flask-caching",
     "flask-security",
@@ -17,7 +17,9 @@ dependencies = [
     "jinja2",
     "ipywidgets",
     "holoviews",
-    "huggingface-hub",
+    "huggingface-hub>=0.26.0",
+    "transformers>=4.46.0",
+    "sentence-transformers",
     "gensim",
     "matplotlib",
     "more-itertools",
@@ -25,11 +27,12 @@ dependencies = [
     "nltk",
     "pandas",
     "parameterized",
+    "passlib[bcrypt]",
     "psutil",
     "psycopg2-binary",
     "pyarrow",
     "pytest",
-    "requests",
+    "requests==2.32.4",
     "scikit-learn",
     "scipy",
     "seaborn",
@@ -51,6 +54,7 @@ dependencies = [
     "text2num",
     "vine",
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "biopython"
 ]
 # Are required also
 #    "spacy",
