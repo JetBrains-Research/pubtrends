@@ -1,8 +1,6 @@
 import logging
 import os
-
 import torch
-from lazy import lazy
 from sentence_transformers import SentenceTransformer
 
 from pysrc.config import PubtrendsConfig
@@ -19,7 +17,6 @@ else:
     raise RuntimeError('Failed to configure model cache directory')
 
 
-
 class SentenceTransformerModel:
 
     def __init__(self):
@@ -34,14 +31,13 @@ class SentenceTransformerModel:
         # noinspection PyStatementEffect
         self.download_and_load_model
 
-    @lazy
     def download_and_load_model(self):
         logger.info(f'Loading model {self.model_name} into {self.device}')
         # Superfast general purpose, acceptable for biomedical texts
         self.model = SentenceTransformer(self.model_name, device=self.device)
         return self
 
-    def encode(self, texts, max_workers = 4, show_progress_bar=False):
+    def encode(self, texts, max_workers=4, show_progress_bar=False):
         if self.device != 'cpu':
             return self.model.encode(
                 texts, device=self.device, show_progress_bar=show_progress_bar
@@ -50,6 +46,7 @@ class SentenceTransformerModel:
             return self.model.encode(
                 texts, batch_size=max_workers, device=self.device, show_progress_bar=show_progress_bar
             )
+
 
 logger.info('Prepare embeddings pretrained model')
 SENTENCE_TRANSFORMER_MODEL = SentenceTransformerModel()
