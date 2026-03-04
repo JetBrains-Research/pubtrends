@@ -131,9 +131,10 @@ def analyze_semantic_search(source, query, limit, noreviews, min_year, max_year,
     topics = int(topics) if topics is not None and topics != '' else SHOW_TOPICS_DEFAULT
     if not is_semantic_search_service_available():
         raise Exception('Semantic search is not available')
-    ids = fetch_semantic_search(source, query, noreviews, min_year, max_year, limit)
-    if ids is None:
+    search = fetch_semantic_search(source, query, noreviews, min_year, max_year, limit)
+    if search is None:
         raise Exception('Failed to fetch semantic search results')
+    ids = [id for (id, _) in search]
     return _analyze_id_list(
         IDS_ANALYSIS_TYPE,
         analyzer, query, ids, ids, 'Pubmed', '', limit, False, None, None,

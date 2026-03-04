@@ -31,9 +31,9 @@ def fetch_semantic_search(source, text, noreviews, min_year, max_year, limit):
         source=source,
         text=text,
         noreviews=noreviews,
-        minyear=min_year,
-        maxyear=max_year,
-        limit=limit
+        minyear=int(min_year) if min_year else None,
+        maxyear=int(max_year) if max_year else None,
+        limit=int(limit)
     )
     try:
         r = requests.request(

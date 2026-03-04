@@ -47,6 +47,8 @@ def semantic_search():
     min_year = data.get('minyear', None)
     max_year = data.get('maxyear', None)
     limit = data['limit']
+    logger.info(f'Search parameters: source={source}, text={text}, noreviews={noreviews}, '
+                f'min_year={min_year}, max_year={max_year}, limit={limit}')
     result = SEMANTIC_SEARCH.search(source, text, noreviews, min_year, max_year, limit)
     logger.info(f'Return semantic search results in JSON format {len(result)}')
     return json.dumps(result)
@@ -65,6 +67,8 @@ def semantic_search_embeddings():
         min_year = data.get('minyear', None)
         max_year = data.get('maxyear', None)
         limit = data['limit']
+        logger.info(f'Search parameters: source={source}, noreviews={noreviews}, '
+                    f'min_year={min_year}, max_year={max_year}, limit={limit}')
         result = SEMANTIC_SEARCH.search_embeddings(source, embeddings, noreviews, min_year, max_year, limit)
         logger.info(f'Return semantic search results in JSON format {len(result)}')
         return json.dumps(result)
