@@ -52,7 +52,12 @@ bash scripts/nlp.sh
 2. Start Redis:
 
 ```bash
-docker run -p 6379:6379 redis:7.4.2
+docker run \
+  --name redis \
+  -p 6379:6379 \
+  -v ~/.pubtrends/redis-data:/data \
+  -v ~/.pubtrends/logs:/var/log/redis \
+  redis:7.4.2
 ```
 
 3. Configure Python environment with uv:

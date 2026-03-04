@@ -41,8 +41,9 @@ services:
     image: redis:7.4.2
     volumes:
       - ~/.pubtrends/logs:/log
+      - ~/.pubtrends/redis-data:/data
     # This command is used to process huge analysis results of 40k+ papers
-    command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
+    command: redis-server --dir /data --logfile /log/redis.log --timeout 0 --client-output-buffer-limit normal 0 0 0
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
