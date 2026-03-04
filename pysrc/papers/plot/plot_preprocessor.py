@@ -136,7 +136,7 @@ class PlotPreprocessor:
     def topics_words(kwd_df, n):
         words2show = {}
         for _, row in kwd_df.iterrows():
-            comp, kwds = row[0], row[1]
+            comp, kwds = row['comp'], row['kwd']
             if kwds != '':  # Correctly process empty freq_kwds encoding
                 words2show[comp] = [p.split(':')[0] for p in kwds.split(',')[:n]]
             else:

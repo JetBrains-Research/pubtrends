@@ -18,9 +18,8 @@ class TestExtractNumbers(unittest.TestCase):
                           _preprocess_text('Peter the 1st, Ekaterina the 2nd, Nikolai the 3rd, Others 4th'))
 
     def test_sentences(self):
-        # One is missing here!
         metrics, _ = extract_metrics('Two bananas. 10 million USD. Twenty million dogs.')
-        self.assertEqual({'banana': [(2, 0)], 'dog': [(20000000, 1)], 'usd': [(1000, 1), (1000000, 1)]}, metrics)
+        self.assertEqual({'banana': [(2, 0)], 'dog': [(20000000, 1)], 'usd': [(10000000, 1)]}, metrics)
 
     def test_short(self):  # Short sequence
         metrics, _ = extract_metrics("One apple")

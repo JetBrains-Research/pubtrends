@@ -46,9 +46,22 @@ def _preprocess_text(text):
     # Replace non-ascii or punctuation with space
     text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text, flags=re.IGNORECASE)
     # Whitespaces normalization, see #215
-    text = re.sub('\s{2,}', ' ', text.strip())
+    text = re.sub(r'\s{2,}', ' ', text.strip())
     # Convert textual numbers to digits (three -> 3)
-    text = alpha2digit(text, 'en', relaxed=True)
+    text = alpha2digit(text, 'en')
+    # Handle "X million/billion/thousand" patterns - both text and numeric forms
+    # After alpha2digit, "10 million" becomes "10 1000000", so we handle both
+    def format_number(match, multiplier):
+        num = float(match.group(1)) * multiplier
+        return str(int(num)) if num == int(num) else str(num)
+    # Handle numeric patterns like "10 1000000" (after alpha2digit conversion)
+    text = re.sub(r'([\d]+(?:\.[\d]+)?)\s+1000000000(?!\d)', lambda m: format_number(m, 1000000000), text)
+    text = re.sub(r'([\d]+(?:\.[\d]+)?)\s+1000000(?!\d)', lambda m: format_number(m, 1000000), text)
+    text = re.sub(r'([\d]+(?:\.[\d]+)?)\s+1000(?!\d)', lambda m: format_number(m, 1000), text)
+    # Also handle text patterns in case alpha2digit doesn't convert them
+    text = re.sub(r'([\d]+(?:\.[\d]+)?)\s+billion', lambda m: format_number(m, 1000000000), text, flags=re.IGNORECASE)
+    text = re.sub(r'([\d]+(?:\.[\d]+)?)\s+million', lambda m: format_number(m, 1000000), text, flags=re.IGNORECASE)
+    text = re.sub(r'([\d]+(?:\.[\d]+)?)\s+thousand', lambda m: format_number(m, 1000), text, flags=re.IGNORECASE)
     # Convect 1st, 2nd, 3rd, 4th
     text = re.sub(r"([\d]+)(st|nd|rd|th)", r"\g<1>", text, flags=re.IGNORECASE)
     return text

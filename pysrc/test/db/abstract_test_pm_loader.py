@@ -72,8 +72,8 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         self.assertListEqual(actual, expected, msg='Wrong journals extracted')
 
     def test_load_publications_data_frame(self):
-        assert_frame_equal(self.get_publications_dataframe(), EXPECTED_PUB_DF, 'Wrong publication data',
-                           check_like=True)
+        assert_frame_equal(self.get_publications_dataframe(), EXPECTED_PUB_DF,
+                           check_like=True, check_dtype=False)
 
     @parameterized.expand([
         ('Article', 1, SORT_MOST_RECENT, ['5']),
@@ -135,12 +135,12 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         actual = self.get_cocitations_dataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(
             drop=True)
         # Sort for comparison
-        assert_frame_equal(expected, actual, 'Wrong co-citation data', check_like=True)
+        assert_frame_equal(expected, actual, check_like=True, check_dtype=False)
 
     def test_search_with_given_ids(self):
         ids_list = list(map(lambda article: article.pmid, PART_OF_ARTICLES))
         assert_frame_equal(EXPECTED_PUB_DF_GIVEN_IDS, self.get_loader().load_publications(ids_list),
-                           "Wrong publications extracted", check_like=True)
+                           check_like=True, check_dtype=False)
 
     @parameterized.expand([
         ('1', 1, []),

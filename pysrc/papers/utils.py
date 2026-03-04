@@ -134,7 +134,9 @@ def color_to_rgb(v):
 def factor_colors(factors):
     cmap = factors_colormap(len(factors))
     palette = [color_to_rgb(cmap(i)).to_hex() for i in range(len(factors))]
-    colors = factor_cmap('id', palette=palette, factors=factors)
+    # Convert to list to avoid pandas comparison issues with bokeh's UndefinedType
+    factors_list = factors.tolist() if hasattr(factors, 'tolist') else list(factors)
+    colors = factor_cmap('id', palette=palette, factors=factors_list)
     return colors
 
 

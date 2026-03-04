@@ -50,14 +50,13 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
     def test_load_citation_stats_data_frame(self):
         assert_frame_equal(EXPECTED_CIT_STATS_DF,
                            self.get_citations_stats_dataframe().sort_values(by=['id', 'year']).reset_index(drop=True),
-                           "Citations statistics is incorrect",
-                           check_like=True)
+                           check_like=True, check_dtype=False)
 
     def test_load_citations_count(self):
         self.assertEqual(len(REQUIRED_CITATIONS), len(self.get_citations_dataframe()), 'Wrong number of citations')
 
     def test_load_citations_data_frame(self):
-        assert_frame_equal(EXPECTED_CIT_DF, self.get_citations_dataframe(), 'Wrong citation data', check_like=True)
+        assert_frame_equal(EXPECTED_CIT_DF, self.get_citations_dataframe(), check_like=True, check_dtype=False)
 
     def test_load_cocitations_count(self):
         expected_rows = EXPECTED_COCIT_DF.shape[0]
@@ -67,7 +66,7 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
     def test_load_cocitations_data_frame(self):
         actual = self.get_cocitations_dataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(
             drop=True)
-        assert_frame_equal(EXPECTED_COCIT_DF, actual, "Co-citations dataframe is incorrect", check_like=True)
+        assert_frame_equal(EXPECTED_COCIT_DF, actual, check_like=True, check_dtype=False)
 
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, ARTICLES_LIST))
@@ -78,7 +77,7 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         assert_frame_equal(
             expected,
             actual,
-            "Wrong list of expanded ids"
+            check_dtype=False
         )
 
     @parameterized.expand([

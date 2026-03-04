@@ -22,7 +22,7 @@ class Journal:
 @dataclass
 class AuxInfo:
     authors: List[Author] = field(default_factory=lambda: [])
-    journal: Journal = field(default=Journal())
+    journal: Journal = field(default_factory=Journal)
     language: str = field(default_factory=lambda: '')
     databanks: List[str] = field(default_factory=lambda: [])
 
@@ -40,7 +40,7 @@ class Article:
     abstract: str or None = None
     doi: str = None
     keywords: List[str] = field(default_factory=lambda: [])
-    aux: AuxInfo = AuxInfo()
+    aux: AuxInfo = field(default_factory=AuxInfo)
 
     def authors(self) -> str:
         return ', '.join([author.name for author in self.aux.authors])
