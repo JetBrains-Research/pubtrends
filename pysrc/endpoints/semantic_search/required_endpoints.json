@@ -1,4 +1,5 @@
 [
   {"path": "/", "methods": ["GET"]},
-  {"path": "/semantic_search", "methods": ["POST"]}
+  {"path": "/semantic_search", "methods": ["POST"]},
+  {"path": "/semantic_search_embeddings", "methods": ["POST"]}
 ]
