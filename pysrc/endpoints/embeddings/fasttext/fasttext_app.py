@@ -4,10 +4,12 @@ import os
 import threading
 
 from flask import Flask, request
+from flasgger import Swagger
 
 from pysrc.endpoints.embeddings.fasttext.fasttext import FASTTEXT_MODEL_CACHE, FASTTEXT_MODEL_CACHE_LOCK
 
 fasttext_app = Flask(__name__)
+Swagger(fasttext_app)
 
 #####################
 # Configure logging #
@@ -47,6 +49,18 @@ def init_fasttext_model():
 
 @fasttext_app.route('/check', methods=['GET'])
 def check():
+    """
+    Check if FastText model is loaded and ready
+    ---
+    tags:
+      - FastText
+    responses:
+      200:
+        description: Model loading status
+        schema:
+          type: boolean
+          description: True if model is loaded, False otherwise
+    """
     if fasttext_app.config.get('LOADED', False):
         return json.dumps(True)
     if fasttext_app.config.get('LOADING', False):
@@ -64,8 +78,37 @@ def check():
         FASTTEXT_MODEL_CACHE_LOCK.release()
 
 
-@fasttext_app.route('/embeddings_tokens', methods=['GET'])
+@fasttext_app.route('/embeddings_tokens', methods=['POST'])
 def embeddings_tokens():
+    """
+    Generate embeddings for tokenized text using FastText (BioSentVec)
+    ---
+    tags:
+      - FastText
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: List of tokenized sentences (each sentence is a list of tokens)
+          example: [["cancer", "treatment"], ["machine", "learning"]]
+    responses:
+      200:
+        description: Computed embeddings for each sentence
+        schema:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+          description: List of embedding vectors (one per input sentence)
+    """
     # Please ensure that already initialized. Otherwise, model loading may take some time
     corpus_tokens = request.get_json()
     logger.info('Computing embeddings')

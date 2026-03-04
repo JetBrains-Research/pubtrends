@@ -3,10 +3,12 @@ import logging
 import os
 
 from flask import Flask, request
+from flasgger import Swagger, swag_from
 
 from pysrc.endpoints.semantic_search.semantic_search import SEMANTIC_SEARCH
 
 semantic_search_app = Flask(__name__)
+Swagger(semantic_search_app)
 
 #####################
 # Configure logging #
@@ -36,8 +38,65 @@ if __name__ != '__main__':
 logger = semantic_search_app.logger
 
 
-@semantic_search_app.route('/semantic_search', methods=['GET'])
+@semantic_search_app.route('/semantic_search', methods=['POST'])
 def semantic_search():
+    """
+    Perform semantic search on scientific papers
+    ---
+    tags:
+      - Semantic Search
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - source
+            - text
+            - noreviews
+            - limit
+          properties:
+            source:
+              type: string
+              description: Data source (e.g., "Pubmed")
+              example: "Pubmed"
+            text:
+              type: string
+              description: Search query text
+              example: "cancer treatment"
+            noreviews:
+              type: boolean
+              description: Exclude review articles
+              example: true
+            minyear:
+              type: integer
+              description: Minimum publication year (optional)
+              example: 2020
+            maxyear:
+              type: integer
+              description: Maximum publication year (optional)
+              example: 2024
+            limit:
+              type: integer
+              description: Maximum number of results to return
+              example: 100
+    responses:
+      200:
+        description: List of search results with PMIDs and similarity scores
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              pmid:
+                type: string
+                description: PubMed ID
+              similarity:
+                type: number
+                format: float
+                description: Similarity score
+    """
     # Please ensure that already initialized. Otherwise, model loading may take some time
     data = request.get_json()
     logger.info('Search')
@@ -54,8 +113,73 @@ def semantic_search():
     return json.dumps(result)
 
 
-@semantic_search_app.route('/semantic_search_embeddings', methods=['GET'])
+@semantic_search_app.route('/semantic_search_embeddings', methods=['POST'])
 def semantic_search_embeddings():
+    """
+    Perform semantic search using pre-computed embeddings
+    ---
+    tags:
+      - Semantic Search
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - source
+            - embeddings
+            - noreviews
+            - limit
+          properties:
+            source:
+              type: string
+              description: Data source (e.g., "Pubmed")
+              example: "Pubmed"
+            embeddings:
+              type: string
+              description: JSON-encoded array of embedding vectors
+              example: "[0.1, 0.2, 0.3, ...]"
+            noreviews:
+              type: boolean
+              description: Exclude review articles
+              example: true
+            minyear:
+              type: integer
+              description: Minimum publication year (optional)
+              example: 2020
+            maxyear:
+              type: integer
+              description: Maximum publication year (optional)
+              example: 2024
+            limit:
+              type: integer
+              description: Maximum number of results to return
+              example: 100
+    responses:
+      200:
+        description: List of search results with PMIDs and similarity scores
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              pmid:
+                type: string
+                description: PubMed ID
+              similarity:
+                type: number
+                format: float
+                description: Similarity score
+      500:
+        description: Error processing request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              description: Error message
+    """
     # Please ensure that already initialized. Otherwise, model loading may take some time
     try:
         data = request.get_json()

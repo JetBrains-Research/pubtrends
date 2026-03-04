@@ -3,10 +3,12 @@ import logging
 import os
 
 from flask import Flask, request
+from flasgger import Swagger
 
 from pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer import SENTENCE_TRANSFORMER_MODEL
 
 sentence_transformer_app = Flask(__name__)
+Swagger(sentence_transformer_app)
 
 #####################
 # Configure logging #
@@ -36,8 +38,35 @@ if __name__ != '__main__':
 logger = sentence_transformer_app.logger
 
 
-@sentence_transformer_app.route('/embeddings_texts', methods=['GET'])
+@sentence_transformer_app.route('/embeddings_texts', methods=['POST'])
 def embeddings_texts():
+    """
+    Generate embeddings for text using Sentence Transformer model
+    ---
+    tags:
+      - Sentence Transformer
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+          description: List of text strings to encode
+          example: ["cancer treatment research", "machine learning in medicine"]
+    responses:
+      200:
+        description: Computed embeddings for each text
+        schema:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+          description: List of embedding vectors (one per input text)
+    """
     # Please ensure that already initialized. Otherwise, model loading may take some time
     texts = request.get_json()
     logger.info('Computing texts embeddings')

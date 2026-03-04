@@ -90,8 +90,10 @@ class SemanticSearch:
         return self.faiss_connector.create_or_load_faiss()
 
     def _search_raw(self, text, n):
-        embeddings_func = lambda t: fetch_texts_embedding([t])[0]
-        query_embedding = embeddings_func(text).reshape(1, -1)
+        embeddings = fetch_texts_embedding([text])
+        if embeddings is None:
+            raise RuntimeError("Failed to fetch text embeddings. Ensure the embeddings service is running.")
+        query_embedding = embeddings[0].reshape(1, -1)
         faiss_index, pids_idx = self._load_faiss_and_index()
         result = semantic_search_faiss_embedding(faiss_index, pids_idx, query_embedding, n)
         return result

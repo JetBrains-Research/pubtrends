@@ -32,7 +32,7 @@ def fetch_tokens_embeddings(tokens):
     try:
         r = requests.request(
             url=f'{EMBEDDINGS_SERVICE_URL}/embeddings_tokens',
-            method='GET',
+            method='POST',
             json=tokens,
             headers={'Accept': 'application/json'},
             timeout=600  # seconds timeout
@@ -57,7 +57,7 @@ def fetch_texts_embedding(texts):
     try:
         r = requests.request(
             url=f'{EMBEDDINGS_SERVICE_URL}/embeddings_texts',
-            method='GET',
+            method='POST',
             json=texts,
             headers={'Accept': 'application/json'},
             timeout=600  # seconds timeout

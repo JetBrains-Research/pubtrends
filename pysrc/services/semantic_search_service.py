@@ -38,7 +38,7 @@ def fetch_semantic_search(source, text, noreviews, min_year, max_year, limit):
     try:
         r = requests.request(
             url=f'{SEMANTIC_SEARCH_SERVICE_URL}/semantic_search',
-            method='GET',
+            method='POST',
             json=args,
             headers={'Accept': 'application/json'}
         )
@@ -63,7 +63,7 @@ def fetch_semantic_search_embeddings(source, embeddings, noreviews, limit):
     try:
         r = requests.request(
             url=f'{SEMANTIC_SEARCH_SERVICE_URL}/semantic_search_embeddings',
-            method='GET',
+            method='POST',
             json=args,
             headers={'Accept': 'application/json'}
         )
