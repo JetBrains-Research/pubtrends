@@ -3,11 +3,10 @@ import json
 import logging
 import random
 import tempfile
-from urllib.parse import quote
-
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
 from flask_caching import Cache
+from urllib.parse import quote
 
 from pysrc.app.admin import admin_bp, init_admin
 from pysrc.app.api import api_bp
@@ -24,7 +23,7 @@ from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, 
     prepare_search_string
 from pysrc.papers.questions.questions import get_relevant_papers
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
-from pysrc.services.embeddings_service import is_embeddings_service_available, is_texts_embeddings_available
+from pysrc.services.embeddings_service import is_texts_embeddings_available
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
 from pysrc.version import VERSION
 
@@ -105,8 +104,6 @@ def log_request(r):
 @pubtrends_app.route('/')
 @cache.cached(unless=lambda: not pubtrends_app.config.get(PREDEFINED_TASKS_READY_KEY, False))
 def index():
-    if not (is_embeddings_service_available() and is_semantic_search_service_available()):
-        return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
     if not are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
 
