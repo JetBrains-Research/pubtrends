@@ -15,7 +15,7 @@ Swagger(semantic_search_app)
 #####################
 
 # Deployment and development
-LOG_PATHS = ['/logs', os.path.expanduser('~/.pubk/logs')]
+LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends/logs')]
 for p in LOG_PATHS:
     if os.path.isdir(p):
         logfile = os.path.join(p, 'semantic_search_app.log')

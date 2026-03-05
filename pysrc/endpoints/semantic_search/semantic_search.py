@@ -4,15 +4,15 @@ from functools import cache
 import numpy as np
 import pandas as pd
 
-from pysrc.preprocess.embeddings.publications_db_connector import PublicationsDBConnector
-from pysrc.config import PubKConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.faiss.faiss_connector import FaissConnector
-from pysrc.utils import l2norm
+from pysrc.papers.utils import l2norm
+from pysrc.preprocess.embeddings.publications_db_connector import PublicationsDBConnector
 from pysrc.services.embeddings_service import fetch_texts_embedding
 
 logger = logging.getLogger(__name__)
 
-PUBK_CONFIG = PubKConfig(test=False)
+PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 def semantic_search_faiss_embedding(faiss_index, pids_idx, query_embedding, k):
@@ -40,7 +40,7 @@ class SemanticSearch:
 
     def __init__(self, source):
         self.faiss_connector = FaissConnector(
-            source, PUBK_CONFIG.sentence_transformer_model, PUBK_CONFIG.embeddings_dimension
+            source, PUBTRENDS_CONFIG.sentence_transformer_model, PUBTRENDS_CONFIG.embeddings_dimension
         )
 
     def search(self, source, text, noreviews, min_year, max_year, n):
