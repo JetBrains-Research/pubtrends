@@ -28,8 +28,7 @@ class SentenceTransformerModel:
             self.device = 'cpu'
 
         self.model_name = PubtrendsConfig().sentence_transformer_model
-        # noinspection PyStatementEffect
-        self.download_and_load_model
+        self.download_and_load_model()
 
     def download_and_load_model(self):
         logger.info(f'Loading model {self.model_name} into {self.device}')
