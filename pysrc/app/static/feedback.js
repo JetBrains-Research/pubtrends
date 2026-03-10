@@ -8,15 +8,15 @@ function createClickableFeedBackForm(feedBackElementId, feedBackId) {
         <div id="` + feedBackId + `" class="btn-group-horizontal">
             <button type="button" class="btn btn-sm btn-feedback-yes"
                 onClick="feedback(this, 1)">
-                <img src="smile.svg" alt="Yes"/>
+                <img src="/static/smile.svg" alt="Yes"/>
             </button>
             <button type="button" class="btn btn-sm btn-feedback-meh"
                 onClick="feedback(this, 0)">
-                <img src="meh.svg" alt="Not sure"/>
+                <img src="/static/meh.svg" alt="Not sure"/>
             </button>
             <button type="button" class="btn btn-sm btn-feedback-no"
                 onClick="feedback(this, -1)">
-                <img src="frown.svg" alt="No"/>
+                <img src="/static/frown.svg" alt="No"/>
             </button>
         </div>
     `)
