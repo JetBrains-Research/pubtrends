@@ -58,10 +58,10 @@
                     <a class="nav-link py-1 px-2 me-1 grey" href="#similar">Similar Papers</a>
                     {% endif %}
                     {% if prior_papers is defined %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#prior">Prior Papers</a>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#prior">References</a>
                     {% endif %}
                     {% if derivative_papers is defined %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#derivative">Derivative Papers</a>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#derivative">Citations</a>
                     {% endif %}
                 </div>
             </div>
@@ -92,13 +92,13 @@
                             {% if prior_papers is defined %}
                             <li class="nav-item d-flex align-items-center">
                                 <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='rewind.svg') }}"/>
-                                <a class="nav-link px-0 py-1" href="#prior">Prior Papers</a>
+                                <a class="nav-link px-0 py-1" href="#prior">References</a>
                             </li>
                             {% endif %}
                             {% if derivative_papers is defined %}
                             <li class="nav-item d-flex align-items-center">
                                 <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='fast-forward.svg') }}"/>
-                                <a class="nav-link px-0 py-1" href="#derivative">Derivative Papers</a>
+                                <a class="nav-link px-0 py-1" href="#derivative">Citations</a>
                             </li>
                             {% endif %}
                         </ul>
@@ -244,7 +244,7 @@
             {% if prior_papers is defined %}
                 <div id="prior" class="card mt-3">
                     <div class="card-title">
-                        <h1 class="card-header">Prior Papers</h1>
+                        <h1 class="card-header">References</h1>
                     </div>
                     <div class="card-body">
                         <p>
@@ -287,7 +287,7 @@
             {% if derivative_papers is defined %}
                 <div id="derivative" class="card mt-3">
                     <div class="card-title">
-                        <h1 class="card-header">Derivative Papers</h1>
+                        <h1 class="card-header">Citations</h1>
                     </div>
                     <div class="card-body">
                         <p>

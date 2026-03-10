@@ -3,8 +3,8 @@ import logging
 from itertools import chain
 
 from pysrc.app.reports import preprocess_string
-from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES, TOPIC_DESCRIPTION_WORDS
-from pysrc.services.embeddings_service import is_texts_embeddings_available
+from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES, TOPIC_DESCRIPTION_WORDS, REFERENCES_PAPERS, \
+    CITATIONS_PAPERS, SIMILAR_PAPERS
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description
@@ -12,7 +12,7 @@ from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, components_list, topics_info_and_word_cloud
-from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, MAX_QUERY_LENGTH, trim, PAPER_ANALYSIS_TYPE
+from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, trim, PAPER_ANALYSIS_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,6 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
         if topics_hierarchy_with_keywords:
             result['topics_hierarchy_with_keywords'] = components_list(topics_hierarchy_with_keywords)
 
-
     result['feature_authors_enabled'] = config.feature_authors_enabled
     if config.feature_authors_enabled:
         result['author_statistics'] = plotter.author_statistics()
@@ -61,6 +60,7 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
         result['journal_statistics'] = plotter.journal_statistics()
 
     return result
+
 
 def prepare_search_string(topic, word, author, journal, papers_list) -> tuple[int, str]:
     search_string = ''
@@ -152,7 +152,8 @@ def prepare_paper_data(data: AnalysisData, pid):
     url_prefix = Loaders.get_url_prefix(source)
     # Use pid if is given, or for PAPER_ANALYSIS_TYPE use the seed paper, otherwise show the very first paper
     if not pid:
-        pid = data.search_ids[0] if data.analysis_type == PAPER_ANALYSIS_TYPE and data.search_ids else data.df['id'].values[0]
+        pid = data.search_ids[0] if data.analysis_type == PAPER_ANALYSIS_TYPE and data.search_ids else \
+        data.df['id'].values[0]
     sel = data.df[data.df['id'] == pid]
     title = sel['title'].values[0]
     authors = sel['authors'].values[0]
@@ -174,10 +175,12 @@ def prepare_paper_data(data: AnalysisData, pid):
 
     logger.debug('Computing most cited prior and derivative papers')
     derivative_papers = PlotPreprocessor.get_top_papers_id_title_year_cited_topic(
-        data.cit_df.loc[data.cit_df['id_in'] == pid]['id_out'], data.df
+        data.cit_df.loc[data.cit_df['id_in'] == pid]['id_out'], data.df,
+        CITATIONS_PAPERS
     )
     prior_papers = PlotPreprocessor.get_top_papers_id_title_year_cited_topic(
-        data.cit_df.loc[data.cit_df['id_out'] == pid]['id_in'], data.df
+        data.cit_df.loc[data.cit_df['id_out'] == pid]['id_in'], data.df,
+        REFERENCES_PAPERS
     )
 
     logger.debug('Computing most similar papers')
@@ -186,7 +189,7 @@ def prepare_paper_data(data: AnalysisData, pid):
         similar_papers = []
         neighbors_data = sorted(list([(x, graph.get_edge_data(pid, x)) for x in graph.neighbors(pid)]),
                                 key=lambda x: x[1]['similarity'], reverse=True)
-        for v, d in neighbors_data[:50]:
+        for v, d in neighbors_data[:SIMILAR_PAPERS]:
             similar_papers.append(
                 (v,
                  data.df[data.df['id'] == v]['title'].values[0],

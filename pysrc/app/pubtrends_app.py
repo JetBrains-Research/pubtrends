@@ -1,6 +1,7 @@
 import gzip
 import json
 import logging
+import os
 import random
 import tempfile
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
@@ -12,7 +13,7 @@ from pysrc.app.admin import admin_bp, init_admin
 from pysrc.app.api import api_bp
 from pysrc.app.messages import *
 from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined, \
-    PREDEFINED_TASKS_READY_KEY, is_paper_predefined, is_terms_predefined
+    is_paper_predefined, is_terms_predefined
 from pysrc.app.reports import load_or_save_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, \
