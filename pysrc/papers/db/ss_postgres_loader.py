@@ -135,7 +135,6 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 FROM to_tsquery('{query_str}') query, 
                 SSPublications P {sampling_filter}
                 WHERE {year_filter} AND P.tsv @@ query {exact_phrase_filter}
-                ORDER BY random()
                 LIMIT {MAX_NUMBER_OF_PAPERS})
             SELECT X.ssid as ssid 
             FROM X

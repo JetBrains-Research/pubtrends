@@ -135,7 +135,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM to_tsquery('{query_str}') query, 
                 PMPublications P {sampling_filter}
                 WHERE {year_filter} AND P.tsv @@ query {noreviews_filter} {exact_phrase_filter} 
-                ORDER BY random()
                 LIMIT {MAX_NUMBER_OF_PAPERS})
             SELECT X.pmid as pmid
             FROM X
