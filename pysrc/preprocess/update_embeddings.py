@@ -116,6 +116,7 @@ def update_embeddings(
         test_limit_per_year = None
 ):
     faiss_index, pids_idx = faiss_connector.create_or_load_faiss()
+    cumulative_updates = 0
     for year in range(max_year, min_year, - 1):
         print(f'Processing year {year}')
         df = publications_db_connector.load_publications_year(year)
@@ -126,6 +127,8 @@ def update_embeddings(
         if test_limit_per_year is not None:
             print(f'Limit to {test_limit_per_year}')
             df = df.head(test_limit_per_year)
+
+        cumulative_updates += len(df)
 
         if faiss_index.ntotal == 0:
             print(f'Empty Faiss index')
@@ -144,6 +147,12 @@ def update_embeddings(
                 embeddings_db_connector=embeddings_db_connector,
                 faiss_connector=faiss_connector,
             )
+        # Only save intermediate results if cumulative updates reach 100,000
+        if cumulative_updates >= 100_000:
+            faiss_connector.save()
+            cumulative_updates = 0  # Reset counter after save
+    # Always save at the end if there are pending updates
+    if cumulative_updates > 0:
         faiss_connector.save()
 
 
@@ -157,16 +166,12 @@ def update_faiss(
         test_limit_per_year = None
 ):
     faiss_index, pids_idx = faiss_connector.create_or_load_faiss()
+    assert faiss_index.ntotal != 0
 
-    if faiss_index.ntotal == 0:
-        print('Empty Faiss index - training on sampled embeddings')
-        embeddings = embeddings_db_connector.sample_embeddings()
-        faiss_connector.faiss_index.train(embeddings)
-        print('Faiss index trained')
-
+    cumulative_updates = 0
     for year in range(max_year, min_year, - 1):
         print(f'Processing year {year}')
-        pids_year = publications_db_connector.collect_pids_year(year)
+        pids_year = publications_db_connector.collect_pids_types_year(year)
         pids_year = list(set(pids_year) - set(pids_idx['pmid']))
 
         if test_limit_per_year is not None:
@@ -176,13 +181,22 @@ def update_faiss(
         print(f'To process {len(pids_year)}')
         if len(pids_year) == 0:
             continue
+
+        cumulative_updates += len(pids_year)
+
         update_faiss_index(
-            df=pd.DataFrame(dict(pmid=pids_year)),
+            df=pd.DataFrame(dict(id=pids_year)),
             publications_db_connector=publications_db_connector,
             embeddings_model_connector=embeddings_model_connector,
             embeddings_db_connector=embeddings_db_connector,
             faiss_connector=faiss_connector,
         )
+        # Only save intermediate results if cumulative updates reach 100,000
+        if cumulative_updates >= 100_000:
+            faiss_connector.save()
+            cumulative_updates = 0  # Reset counter after save
+    # Always save at the end if there are pending updates
+    if cumulative_updates > 0:
         faiss_connector.save()
 
 
