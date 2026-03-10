@@ -1,7 +1,7 @@
 import hashlib
 import logging
-
 from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
@@ -164,7 +164,7 @@ class PapersAnalyzer:
 
         logger.debug('Analyzing texts embeddings')
         self.chunks_embeddings, self.chunks_idx = compute_or_load(
-            f"chunks_embeddings_{ids_key}_2",  # Explicitly specify number of outputs
+            f"chunks_embeddings_{ids_key}",  # Explicitly specify number of outputs
             lambda: embeddings(
                 self.df, self.corpus, self.corpus_tokens, self.corpus_counts, test=test
             ),
@@ -176,16 +176,21 @@ class PapersAnalyzer:
             cache
         )
 
+        logger.debug('Computing TF-IDF vectors')
+        tfidf_transformer = TfidfTransformer()
+        texts_tfidf = tfidf_transformer.fit_transform(self.corpus_counts)
+
         self.progress.info(f'Analyzing papers citations and text similarity network',
                            current=self.get_step_and_inc(), task=task)
-        def add_text_to_graph(graph, papers_text_embeddings):
-            add_text_similarities_edges(ids, papers_text_embeddings, graph, GRAPH_TEXT_SIMILARITY_EDGES)
+
+        def add_text_to_graph(graph, papers_text_embeddings, texts_tfidf):
+            add_text_similarities_edges(ids, papers_text_embeddings, texts_tfidf, graph, GRAPH_TEXT_SIMILARITY_EDGES)
             return graph
 
-        logger.debug('Adding text similarities edges')
+        logger.debug('Adding hybrid text similarities edges (embeddings + TF-IDF)')
         graph = compute_or_load(
             f"graph_with_text_{ids_key}",
-            lambda: add_text_to_graph(graph, papers_text_embeddings),
+            lambda: add_text_to_graph(graph, papers_text_embeddings, texts_tfidf),
             cache
         )
 
@@ -211,16 +216,16 @@ class PapersAnalyzer:
         )
         logger.debug('Computing PCA projection')
         pca_coords = compute_or_load(
-                f"pca_{ids_key}",
-                lambda: PCA(n_components=PCA_VARIANCE, svd_solver="full")\
-                    .fit_transform(StandardScaler().fit_transform(graph_embeddings)),
-                cache
+            f"pca_{ids_key}",
+            lambda: PCA(n_components=PCA_VARIANCE, svd_solver="full") \
+                .fit_transform(StandardScaler().fit_transform(graph_embeddings)),
+            cache
         )
         if not test and len(self.df) > 1:
             logger.debug('Apply visualization transformation')
             tse_coords = compute_or_load(
                 f"tsne_{ids_key}",
-                lambda: TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))\
+                lambda: TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1)) \
                     .fit_transform(pca_coords),
                 cache
             )
@@ -232,7 +237,7 @@ class PapersAnalyzer:
 
         logger.debug('Extracting topics from papers embeddings')
         self.clusters, self.dendrogram = compute_or_load(
-            f"clusters_{ids_key}_2",
+            f"clusters_{ids_key}",
             lambda: cluster_and_sort(pca_coords, topics),
             cache
         )

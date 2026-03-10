@@ -36,7 +36,11 @@ SIMILARITY_COCITATION = 10  # x number of co-citations
 SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references
 SIMILARITY_CITATION = 1  # x 0 - 1 citations
 
-SIMILARITY_TEXT = 20  # cosine similarity between texts embeddings -1 - 1
+# Hybrid text similarity:
+SIMILARITY_TEXT = 20 # coefficient
+SIMILARITY_TEXT_EMBEDDINGS = 0.8  # coefficient for embeddings similarity (cosine similarity -1 to 1)
+SIMILARITY_TEXT_TFIDF = 0.2  # coefficient for TF-IDF similarity (cosine similarity -1 to 1)
+SIMILARITY_TEXT_MIN = 0.1  # minimum threshold for both similarities
 
 # A minimal number of common references, used to reduce papers graph edges count
 # Value > 1 is especially useful while analysing a single paper,

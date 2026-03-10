@@ -1,5 +1,4 @@
 import logging
-
 import networkx as nx
 import numpy as np
 from sklearn.preprocessing import normalize
@@ -14,7 +13,7 @@ def similarity(d):
             SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
             SIMILARITY_COCITATION * d.get('cocitation', 0) + \
             SIMILARITY_CITATION * d.get('citation', 0) + \
-            (SIMILARITY_TEXT * d.get('textsimilarity', 0))
+            SIMILARITY_TEXT * d.get('textsimilarity', 0)
 
 
 def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
@@ -76,20 +75,26 @@ def sparse_graph(graph, k, key='similarity'):
             result.add_node(n)
             # Ensure at least one edge
             for x, data in sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
-                                   key=lambda x: (x[1][key], x), reverse=True)[:1]:
+                                  key=lambda x: (x[1][key], x), reverse=True)[:1]:
                 result.add_edge(n, x, **data)
     logger.debug(f'Sparse {k}-neighbours graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
     return result
 
 
-def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar):
+def add_text_similarities_edges(ids, texts_embeddings, texts_tfidf, papers_graph, top_similar):
     """
-    Adds edges based on text similarity to a graph and updates existing edges with
-    text similarity values as a cosine similarity between text normalized embeddings.
+    Adds edges based on hybrid text similarity to a graph and updates existing edges with
+    text similarity values. Hybrid similarity combines:
+    - Embeddings similarity (cosine similarity between text embeddings)
+    - TF-IDF similarity (cosine similarity between TF-IDF vectors)
+
+    Formula: (embeddings_sim if > min else 0) * SIMILARITY_TEXT_EMBEDDINGS +
+             (tfidf_sim if > min else 0) * SIMILARITY_TEXT_TFIDF
 
     """
     logger.debug("Normalizing text embeddings")
     texts_embeddings_norm = normalize(texts_embeddings, norm='l2', axis=1)
+    texts_tfidf_norm = normalize(texts_tfidf, norm='l2', axis=1)
 
     # Build a lookup dict for faster id to index mapping
     id_to_idx = {node_id: idx for idx, node_id in enumerate(ids)}
@@ -101,25 +106,39 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
         batch_end = min(batch_start + ANALYSIS_CHUNK, n_nodes)
         logger.debug(f'Processing batch {batch_start}-{batch_end} of {n_nodes} nodes')
 
-        # Compute similarities for this batch against all nodes
+        # Compute embeddings similarities for this batch against all nodes
         batch_embeddings = texts_embeddings_norm[batch_start:batch_end]
-        similarities_batch = batch_embeddings @ texts_embeddings_norm.T
+        embeddings_sims_batch = batch_embeddings @ texts_embeddings_norm.T
+
+        # Compute TF-IDF similarities if available
+        tfidf_sims_batch = None
+        if texts_tfidf_norm is not None:
+            batch_tfidf = texts_tfidf_norm[batch_start:batch_end]
+            tfidf_sims_batch = (batch_tfidf @ texts_tfidf_norm.T).toarray()
 
         for i in range(batch_end - batch_start):
             node_i = batch_start + i
             node = ids[node_i]
-            similarities = similarities_batch[i]
+            embeddings_sims = embeddings_sims_batch[i]
 
-            # Use argpartition for faster top-k selection (O(n) instead of O(n log n))
+            # Compute hybrid similarities
+            tfidf_sims = tfidf_sims_batch[i]
+            # Apply a threshold and compute hybrid similarity
+            hybrid_sims = (
+                    np.where(embeddings_sims > SIMILARITY_TEXT_MIN, embeddings_sims, 0) * SIMILARITY_TEXT_EMBEDDINGS +
+                    np.where(tfidf_sims > SIMILARITY_TEXT_MIN, tfidf_sims, 0) * SIMILARITY_TEXT_TFIDF
+            )
+
+            # Use partition for faster top-k selection (O(n) instead of O(n log n))
             # We need top_similar + 1 to account for self-similarity
-            k = min(top_similar + 1, len(similarities))
-            top_indices = np.argpartition(similarities, -k)[-k:]
+            k = min(top_similar + 1, len(hybrid_sims))
+            top_indices = np.argpartition(hybrid_sims, -k)[-k:]
 
             # Add edges for top similar nodes
             for similar_node_i in top_indices:
                 if similar_node_i == node_i:
                     continue
-                similarity = similarities[similar_node_i]
+                similarity = hybrid_sims[similar_node_i]
                 similar_node = ids[similar_node_i]
                 if similarity > 0 and not papers_graph.has_edge(node, similar_node):
                     if node == similar_node:
@@ -132,6 +151,6 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
                 if neighbor_i is not None and neighbor_i > node_i:
                     if node == neighbor:
                         raise ValueError('Self-similarity is not allowed')
-                    papers_graph[node][neighbor]['textsimilarity'] = similarities[neighbor_i]
+                    papers_graph[node][neighbor]['textsimilarity'] = hybrid_sims[neighbor_i]
 
-    logger.debug(f'Done processed {n_nodes} nodes for text similarities')
+    logger.debug(f'Done processed {n_nodes} nodes for hybrid text similarities')
