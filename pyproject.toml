@@ -37,6 +37,7 @@ dependencies = [
     "scipy",
     "seaborn",
     "spacy",
+    "statsmodels",
     "sqlalchemy",
     "tqdm",
     "umap-learn",
