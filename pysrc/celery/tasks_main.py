@@ -63,7 +63,7 @@ def _analyze_id_list(analysis_type, analyzer, query , search_ids,
         raise RuntimeError('Empty papers list')
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
-        analyzer.analyze_papers(ids, topics, test=test, task=current_task)
+        analyzer.analyze_papers(ids, topics, test=test, task=task)
     finally:
         analyzer.loader.close_connection()
 
