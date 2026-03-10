@@ -72,6 +72,7 @@ def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     tokens_freqs = tokens_counts / len(df)
     logger.debug(f'Tokens frequencies min={tokens_freqs.min()}, max={tokens_freqs.max()}, '
                  f'mean={tokens_freqs.mean()}, std={tokens_freqs.std()}')
+    # noinspection PyUnboundLocalVariable
     corpus_tokens = vectorizer.get_feature_names_out().tolist()
     corpus_tokens_set = set(corpus_tokens)
     # Filter tokens left after vectorization
@@ -124,6 +125,22 @@ def stemmed_tokens(sentence, min_token_length=3):
     return [(stemmer.stem(token), token) for token in lemmas]
 
 
+def _process_stemming_batch(batch):
+    """Process a batch of papers for stemming (used in parallel multiprocessing)"""
+    # Load NLP model in each process (cannot be shared across processes)
+    import spacy
+    nlp = spacy.load("en_core_web_sm")
+
+    batch_results = []
+    for i, (title, abstract) in enumerate(batch):
+        batch_results.append([
+            stemmed_tokens(s) for s in nlp(f'{title}. {abstract}').sents
+        ])
+        if i % ANALYSIS_CHUNK == 0 and i > 0:
+            logger.debug(f'Processed {i + 1} papers in batch')
+    return batch_results
+
+
 def build_stemmed_corpus(df):
     """ Tokenization is done in several steps
     1. Lemmatization:  Ignore stop words, take into accounts nouns and adjectives, fix plural forms
@@ -131,15 +148,22 @@ def build_stemmed_corpus(df):
     3. Matching stems to the shortest existing lemma in texts
     """
     logger.info(f'Building corpus from {len(df)} papers')
-    logger.info(f'Processing stemming for all papers')
+    logger.info(f'Processing stemming for all papers using parallel multiprocessing')
+
+    # Prepare data for parallel processing
+    texts = [(title, abstract) for title, abstract in zip(df['title'], df['abstract'])]
+    max_workers = multiprocessing.cpu_count()
+    batch_size = max(1, int(ceil(len(texts) / max_workers)))
+    batches = list(sliced(texts, batch_size))
+
+    # Process in parallel using processes (avoids GIL limitations)
     papers_stemmed_sentences = []
-    # NOTE: we split mesh and keywords by commas into separate sentences
-    for i, (title, abstract) in enumerate(zip(df['title'], df['abstract'])):
-        papers_stemmed_sentences.append([
-            stemmed_tokens(s) for s in NLP(f'{title}. {abstract}').sents
-        ])
-        if i % ANALYSIS_CHUNK == 0:
-            logger.debug(f'Processed {i + 1} papers')
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(_process_stemming_batch, batch) for batch in batches]
+        for future in concurrent.futures.as_completed(futures):
+            batch_result = future.result()
+            papers_stemmed_sentences.extend(batch_result)
+
     logger.debug(f'Done processing stemming for {len(df)} papers')
     logger.info('Creating global shortest stem to word map')
     stems_tokens_map = _build_stems_to_tokens_map(chain(*chain(*papers_stemmed_sentences)))
@@ -204,11 +228,11 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
 
 def embeddings_from_service(df):
     logger.debug("Fetching embeddings from embeddings service")
-    data = [(pid, f'{title}. {abstract}')
-            for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
-    logger.debug('Collecting chunks for embeddings')
-    chunks, chunks_idx = collect_papers_chunks(
-        (data, EMBEDDINGS_CHUNK_SIZE, EMBEDDINGS_SENTENCE_OVERLAP))
+    pids = df['id'].tolist()
+    texts = [f'{title}. {abstract}' for title, abstract in zip(df['title'], df['abstract'])]
+    logger.debug('Collecting chunks for embeddings using parallel processing')
+    chunks, chunks_idx = parallel_collect_chunks(
+        pids, texts, EMBEDDINGS_CHUNK_SIZE, EMBEDDINGS_SENTENCE_OVERLAP)
     logger.debug(f'Done collecting chunks for embeddings: {len(chunks)}')
     return fetch_texts_embedding(chunks), chunks_idx
 
@@ -224,7 +248,7 @@ def fetch_embeddings_from_db(df):
         return db_embeddings, db_index
     logger.debug(f'Not all the pids found in embeddings DB: {len(pids_not_in_db)}')
     not_in_db_df = df[df['id'].isin(pids_not_in_db)]
-    logger.debug('Collecting chunks for embeddings not in DB')
+    logger.debug('Collecting chunks for embeddings not in DB using parallel processing')
     not_in_db_embeddings, not_in_db_index = embeddings_from_service(not_in_db_df)
     all_embeddings = np.concatenate([db_embeddings, not_in_db_embeddings])
     all_index = db_index + not_in_db_index
@@ -266,10 +290,15 @@ def _texts_embeddings(corpus_counts, tokens_embeddings):
 
 
 def get_chunks(text, max_tokens=128, overlap_sentences=1):
+    return _get_chunks_with_nlp(NLP, text, max_tokens, overlap_sentences)
+
+
+def _get_chunks_with_nlp(nlp, text, max_tokens=128, overlap_sentences=1):
     """
     Split text into a list of overlapping chunks.
 
     Args:
+        nlp: Spacy NLP model to use for sentence tokenization
         text (str): The text to split into chunks
         max_tokens (int): Maximum number of tokens per chunk
         overlap_sentences (int): Number of sentences to overlap between chunks
@@ -279,7 +308,7 @@ def get_chunks(text, max_tokens=128, overlap_sentences=1):
     """
 
     # Get all sentences
-    sentences = list(NLP(text).sents)
+    sentences = list(nlp(text).sents)
 
     if not sentences:
         return [text]
@@ -320,11 +349,11 @@ def collect_papers_chunks(args):
     chunks = []
     chunk_idx = []
     for i, (pid, text) in enumerate(batch):
-        for chunk_id, chunk in enumerate(get_chunks(text, max_tokens, overlap_sentences)):
+        for chunk_id, chunk in enumerate(_get_chunks_with_nlp(NLP, text, max_tokens, overlap_sentences)):
             chunk_idx.append((pid, chunk_id))
             chunks.append(chunk)
-        if i % ANALYSIS_CHUNK == 0:
-            logger.debug(f'Processed {i + 1} papers')
+        if i % ANALYSIS_CHUNK == 0 and i > 0:
+            logger.debug(f'Processed {i + 1} papers in batch')
     return chunks, chunk_idx
 
 
