@@ -67,7 +67,7 @@ def expand_ids(
         logger.debug(f'Loaded {len(papers_text_embeddings)} papers embeddings {papers_text_embeddings.shape}')
         logger.debug('Adding similar papers by embeddings')
         similar_by_embds = [pid for pid, _ in fetch_semantic_search_embeddings(
-            'Pubmed', papers_text_embeddings, noreviews, int((limit - len(ids)) * semantic_expand)
+            'Pubmed', papers_text_embeddings, noreviews, None, None, int((limit - len(ids)) * semantic_expand)
         )]
         logger.debug(f'Loaded {len(similar_by_embds)} similar papers by embeddings')
         for pid in similar_by_embds:

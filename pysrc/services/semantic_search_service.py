@@ -51,13 +51,15 @@ def fetch_semantic_search(source, text, noreviews, min_year, max_year, limit):
     return None
 
 
-def fetch_semantic_search_embeddings(source, embeddings, noreviews, limit):
+def fetch_semantic_search_embeddings(source, embeddings, noreviews, min_year, max_year, limit):
     logger.debug(f'Fetching semantic search results by embeddings')
     embeddings = embeddings.tolist()
     args = dict(
         source=source,
         embeddings=json.dumps(embeddings),
         noreviews=noreviews,
+        minyear=int(min_year) if min_year else None,
+        maxyear=int(max_year) if max_year else None,
         limit=limit
     )
     try:
