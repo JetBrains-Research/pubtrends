@@ -102,7 +102,6 @@ def log_request(r):
 
 
 @pubtrends_app.route('/')
-@cache.cached(unless=lambda: not pubtrends_app.config.get(PREDEFINED_TASKS_READY_KEY, False))
 def index():
     search_example_message = ''
     search_example_source = ''
