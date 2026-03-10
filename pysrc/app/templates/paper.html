@@ -346,25 +346,24 @@
 <script>
     "use strict";
     function result() {
-        const url = '/result?query=' + normalize('{{ query }}');
-        const params = new URL(window.location);
-        const jobid = params.searchParams.get('jobid');
-        window.open(url + '&jobid=' + jobid, '_blank');
+        const jobid = new URL(window.location).pathname.split('/').filter(s => s)[1];
+        const url = '/result/' + jobid + '?query=' + normalize('{{ query }}');
+        window.open(url, '_blank');
     }
 
     function graph_callback() {
-        let url = '/graph?query=' + normalize('{{ query }}');
         const params = new URL(window.location);
+        const jobid = params.pathname.split('/').filter(s => s)[1];
+        let url = '/graph/' + jobid + '?query=' + normalize('{{ query }}');
         const pid = params.searchParams.get('id');
         if (pid != null) {
             url += '&id=' + pid;
         }
-        const jobid = params.searchParams.get('jobid');
-        window.open(url + '&jobid=' + jobid, '_blank');
+        window.open(url, '_blank');
     }
 
     function export_data() {
-        const jobid = new URL(window.location).searchParams.get('jobid');
+        const jobid = new URL(window.location).pathname.split('/').filter(s => s)[1];
         window.open('/export/' + jobid, '_blank');
     }
 
@@ -385,7 +384,7 @@
         }
 
         // Configure jobid for feedback
-        const jobid = new URL(window.location).searchParams.get('jobid');
+        const jobid = new URL(window.location).pathname.split('/').filter(s => s)[1];
         $('#feedback-jobid').val(jobid);
 
         // Create clickable feedback forms (guard if function exists)

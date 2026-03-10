@@ -12,8 +12,8 @@
 {% endblock %}
 {% block scripts_head %}
 <!-- Vendor libs required before inline scripts -->
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.6.3.min.js"></script>
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.6.3.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.2.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.2.min.js"></script>
 
 <!-- DataTables with search -->
 <script src="https://cdn.datatables.net/2.3.3/js/dataTables.min.js"></script>
@@ -124,7 +124,7 @@
     <main class="col-lg-10 col-xl-10" role="main">
         <div id="papers" class="card mt-0">
             <div class="card-title">
-                <h2 class="card-header">Papers</h2>
+                <h5 class="card-header">Papers</h5>
             </div>
             <div class="card-body">
                 <p>
@@ -171,7 +171,7 @@
         {% if feature_questions_enabled %}
         <div id="questions" class="card mt-3">
             <div class="card-title">
-                <h1 class="card-header">Questions</h1>
+                <h5 class="card-header">Questions</h5>
             </div>
             <div class="card-body">
                 <strong>Ask questions about the papers</strong>
@@ -202,7 +202,7 @@
 
         <div id="trends" class="card mt-3">
             <div class="card-title">
-                <h1 class="card-header">Trends</h1>
+                <h5 class="card-header">Trends</h5>
             </div>
             <div class="card-body">
                 <strong>Top Cited Papers</strong>
@@ -276,7 +276,7 @@
 
         <div id="network" class="card mt-3">
             <div class="card-title">
-                <h1 class="card-header">Network</h1>
+                <h5 class="card-header">Network</h5>
             </div>
             <div class="card-body">
                 {% if n_papers <= max_graph_size %}
@@ -308,7 +308,7 @@
 
         <div id="topics" class="card mt-3">
             <div class="card-title">
-                <h1 class="card-header">Topics</h1>
+                <h5 class="card-header">Topics</h5>
             </div>
             <div class="card-body">
                 {% if topics_analyzed %}
@@ -384,7 +384,7 @@
         {% if feature_authors_enabled %}
         <div id="authors" class="card mt-3">
             <div class="card-title">
-                <h1 class="card-header">Authors</h1>
+                <h5 class="card-header">Authors</h5>
             </div>
             <div class="card-body">
                 <strong>Authors papers and topics</strong>
@@ -425,7 +425,7 @@
         {% if feature_journals_enabled %}
         <div id="journals" class="card mt-3">
             <div class="card-title">
-                <h1 class="card-header">Journals</h1>
+                <h5 class="card-header">Journals</h5>
             </div>
             <div class="card-body">
                 <strong>Journals topics</strong>
@@ -487,13 +487,13 @@
     "use strict";
 
     function papers_callback_impl(key, value) {
-        const url = '/papers?query=' + normalize('{{ query }}');
-        const jobid = new URL(window.location).searchParams.get('jobid');
+        const jobid = new URL(window.location).pathname.split('/').pop();
+        const url = '/papers/' + jobid + '?query=' + normalize('{{ query }}');
         let args = '';
         if (key != null) {
             args = '&' + key + '=' + value;
         }
-        window.open(url + args + '&jobid=' + jobid, '_blank');
+        window.open(url + args, '_blank');
     }
 
     function papers_callback() {
@@ -529,13 +529,13 @@
     }
 
     function graph_callback() {
-        const url = '/graph?query=' + normalize('{{ query }}');
-        const jobid = new URL(window.location).searchParams.get('jobid');
-        window.open(url + '&jobid=' + jobid, '_blank');
+        const jobid = new URL(window.location).pathname.split('/').pop();
+        const url = '/graph/' + jobid + '?query=' + normalize('{{ query }}');
+        window.open(url, '_blank');
     }
 
     function export_data() {
-        const jobid = new URL(window.location).searchParams.get('jobid');
+        const jobid = new URL(window.location).pathname.split('/').pop();
         window.open('/export/' + jobid, '_blank');
     }
 
@@ -574,7 +574,7 @@
         {% endfor %}
         // @formatter:on
 
-        var jobid = new URL(window.location).searchParams.get('jobid');
+        var jobid = new URL(window.location).pathname.split('/').pop();
         $('#feedback-jobid').val(jobid);
 
         // Create clickable feedback forms

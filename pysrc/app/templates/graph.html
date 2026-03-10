@@ -517,9 +517,9 @@
     }
 
     function result() {
-        const url = '/result?query=' + normalize('{{ query }}');
-        const jobid = new URL(window.location).searchParams.get('jobid');
-        window.open(url + '&jobid=' + jobid, '_blank');
+        const jobid = new URL(window.location).pathname.split('/').filter(s => s)[1];
+        const url = '/result/' + jobid + '?query=' + normalize('{{ query }}');
+        window.open(url, '_blank');
     }
 
     function setupCy() {

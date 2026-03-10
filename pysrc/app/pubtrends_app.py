@@ -254,11 +254,10 @@ def search_semantic():
 # Analysis progress and cancelling #
 ####################################
 
-@pubtrends_app.route('/process')
-def process():
+@pubtrends_app.route('/process/<jobid>')
+def process(jobid):
     """ Rendering process.html for task being queued or executed at the moment """
     logger.info(f'{LOG_PROCESS} {log_request(request)}')
-    jobid = request.values.get('jobid')
     if jobid:
         query = request.args.get('query')
         source = request.args.get('source')
@@ -291,9 +290,9 @@ def status(jobid):
             analysis_type = data['analysis_type']
             query = quote(data['search_query'])
             if analysis_type == IDS_ANALYSIS_TYPE:
-                href = f'/result?query={query}&jobid={jobid}'
+                href = f'/result/{jobid}?query={query}'
             elif analysis_type == PAPER_ANALYSIS_TYPE:
-                href = f'/paper?query={query}&jobid={jobid}'
+                href = f'/paper/{jobid}?query={query}'
             else:
                 raise Exception(f'Unknown analysis type {analysis_type}')
             return json.dumps(dict(state=job_state, progress=100, redirect=href))
@@ -330,12 +329,11 @@ def cancel(jobid):
 ####################################
 
 
-@pubtrends_app.route('/result')
+@pubtrends_app.route('/result/<jobid>')
 @cache.cached(query_string=True)
-def result():
+def result(jobid):
     logger.info(f'/result {log_request(request)}')
     try:
-        jobid = request.args.get('jobid')
         if not jobid:
             logger.error(f'{LOG_RESULT} {ERROR} {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
@@ -358,12 +356,11 @@ def result():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@pubtrends_app.route('/paper')
+@pubtrends_app.route('/paper/<jobid>')
 @cache.cached(query_string=True)
-def paper():
+def paper(jobid):
     logger.info(f'/paper {log_request(request)}')
     try:
-        jobid = request.values.get('jobid')
         pid = request.args.get('id')
         if jobid:
             data = load_or_save_result_data(pubtrends_celery, jobid)
@@ -380,12 +377,11 @@ def paper():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@pubtrends_app.route('/graph')
+@pubtrends_app.route('/graph/<jobid>')
 @cache.cached(query_string=True)
-def graph():
+def graph(jobid):
     logger.info(f'/graph {log_request(request)}')
     try:
-        jobid = request.args.get('jobid')
         pid = request.args.get('pid')
         if jobid:
             data = load_or_save_result_data(pubtrends_celery, jobid)
@@ -403,12 +399,11 @@ def graph():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@pubtrends_app.route('/papers')
+@pubtrends_app.route('/papers/<jobid>')
 @cache.cached(query_string=True)
-def papers():
+def papers(jobid):
     logger.info(f'{LOG_PAPERS} {log_request(request)}')
     try:
-        jobid = request.args.get('jobid')
         if jobid:
             data = load_or_save_result_data(pubtrends_celery, jobid)
             if data is not None:
