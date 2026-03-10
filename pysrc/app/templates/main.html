@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}PubTrends - Your Scientific Literature Explorer{% endblock %}
+{% block title %}PubTrends - Scientific Literature Explorer{% endblock %}
 {% block meta_description %}Analyze scientific literature: discover trends, top-cited papers, and visualize paper networks.{% endblock %}
 {% block og_title %}PubTrends – Scientific Literature Explorer{% endblock %}
 {% block og_description %}Discover publications, trends, and visualize paper networks.{% endblock %}
@@ -100,7 +100,7 @@
     <section class="pt-hero p-5 mb-4">
         <div class="row align-items-center gy-3">
             <div class="col-lg-8">
-                <h1 class="display-6 mb-2">Your Scientific Literature Explorer</h1>
+                <h1 class="display-6 mb-2">Scientific Literature Explorer</h1>
                 <p id="jumbotron" class="lead pt-muted mb-3">
                     Discover publications, trends, and visualize paper networks.
                 </p>
@@ -252,14 +252,10 @@
                     <div id="predefined-semantic" class="d-flex flex-nowrap align-items-center">
                         <div class="me-2">{{ search_example_message }}</div>
                         {% for terms, jobid in semantic_search_example_terms %}
-                        <form action="result" method="GET" class="me-2" style="display: inline;">
-                            <input type="hidden" name="query" value="{{ terms }}">
-                            <button type="submit" name="jobid" value="{{ jobid }}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    style="border-radius: 10px;">
-                                {{ terms }}
-                            </button>
-                        </form>
+                        <a href="/result/{{ jobid }}" class="btn btn-sm btn-outline-secondary me-2"
+                           style="border-radius: 10px;">
+                            {{ terms }}
+                        </a>
                         {% endfor %}
                     </div>
                 </div>
@@ -390,14 +386,10 @@
                     <div id="predefined" class="d-flex flex-nowrap align-items-center">
                         <div class="me-2">{{ search_example_message }}</div>
                         {% for terms, jobid in search_example_terms %}
-                        <form action="result" method="GET" class="me-2" style="display: inline;">
-                            <input type="hidden" name="query" value="{{ terms }}">
-                            <button type="submit" name="jobid" value="{{ jobid }}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    style="border-radius: 10px;">
-                                {{ terms }}
-                            </button>
-                        </form>
+                        <a href="/result/{{ jobid }}" class="btn btn-sm btn-outline-secondary me-2"
+                           style="border-radius: 10px;">
+                            {{ terms }}
+                        </a>
                         {% endfor %}
                     </div>
                 </div>
@@ -510,14 +502,10 @@
                     <div id="predefined" class="d-flex flex-nowrap align-items-center">
                         <div class="me-2">{{ search_example_message }}</div>
                         {% for key, value, jobid in search_example_papers %}
-                        <form action="paper" method="GET" class="me-2" style="display: inline;">
-                            <input type="hidden" name="query" value="{{ key }}={{ value }}">
-                            <button type="submit" name="jobid" value="{{ jobid }}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    style="border-radius: 10px;">
-                                {{ value }}
-                            </button>
-                        </form>
+                        <a href="/paper/{{ jobid }}" class="btn btn-sm btn-outline-secondary me-2"
+                           style="border-radius: 10px;">
+                            {{ value }}
+                        </a>
                         {% endfor %}
                     </div>
                 </div>
