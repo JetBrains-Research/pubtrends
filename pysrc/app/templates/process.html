@@ -82,7 +82,9 @@
                         $progress.hide();
                     }
                     if (response.message !== undefined) {
-                        $status.html(response.message + back);
+                        // Don't show back link for STARTED/PENDING states
+                        const showBackLink = response.state !== 'STARTED' && response.state !== 'PENDING';
+                        $status.html(response.message + (showBackLink ? back : ''));
                         $status.show();
                     } else {
                         $status.hide();
