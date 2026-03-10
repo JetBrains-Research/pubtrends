@@ -66,8 +66,8 @@ docker run \
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -r pyproject.toml
-pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
-pip install --no-cache sentence-transformers faiss-cpu jupyter notebook
+uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
+uv pip install --no-cache sentence-transformers faiss-cpu jupyter notebook
 ```
 
 4. Start Celery worker queue:
