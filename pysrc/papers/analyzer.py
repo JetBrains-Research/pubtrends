@@ -266,7 +266,7 @@ class PapersAnalyzer:
 
     @staticmethod
     def ids_key(ids) -> str:
-        return hashlib.md5(str(sorted(ids)).encode()).hexdigest()
+        return hashlib.md5(str(sorted([str(id) for id in ids])).encode()).hexdigest()
 
     def save(
             self,
