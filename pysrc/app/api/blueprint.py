@@ -102,8 +102,9 @@ def get_result_api():
     query = request.args.get('query')
     try:
         if jobid and query:
-            data = load_or_save_result_data(pubtrends_celery, jobid, 'Pubmed', query, SORT_MOST_CITED, 1000, True, None, None)
-            return data.to_json(), 200
+            data = load_or_save_result_data(pubtrends_celery, jobid)
+            if data:
+                return data.to_json(), 200
         return {'status': 'error'}, 500
     except Exception as e:
         logger.exception(f'/get_result exception {e}')

@@ -10,6 +10,7 @@ from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
+from pysrc.papers.redis_cache import get_cache
 from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
 from pysrc.services.semantic_search_service import is_semantic_search_service_available, fetch_semantic_search
 
@@ -40,6 +41,13 @@ def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_ye
     data = analyzer.save(IDS_ANALYSIS_TYPE, None, query, source, sort, limit, noreviews, min_year, max_year)
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
+
+    # Save to Redis cache
+    if current_task:
+        cache = get_cache()
+        cache.save(current_task.request.id, data)
+        logger.info(f'Saved analysis data to Redis cache for jobid={current_task.request.id}')
+
     return data.to_json(), analyzer.progress.log()
 
 
@@ -69,6 +77,13 @@ def _analyze_id_list(analysis_type, analyzer, query , search_ids,
 
     data = analyzer.save(analysis_type, search_ids, query, source, sort, limit, noreviews, min_year, max_year)
     analyzer.teardown()
+
+    # Save to Redis cache
+    if task:
+        cache = get_cache()
+        cache.save(task.request.id, data)
+        logger.info(f'Saved analysis data to Redis cache for jobid={task.request.id}')
+
     return data.to_json(), analyzer.progress.log()
 
 
