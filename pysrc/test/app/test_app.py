@@ -74,7 +74,7 @@ class TestApp(unittest.TestCase):
             time.sleep(20)  # Should be enough time for processing
             # Form correct url to check results
             jobid = re.search('"/status/([a-z0-9\\-]+)"', response).group(1)
-            rv = c.get(f'/result?jobid={jobid}')  # Result should be fine
+            rv = c.get(f'/result/{jobid}')  # Result should be fine
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
             self.assertTrue('Analyzed <strong>9</strong> papers and <strong>1</strong> topics.' in response)
