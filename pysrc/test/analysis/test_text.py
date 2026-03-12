@@ -75,21 +75,18 @@ class TestText(unittest.TestCase):
         self.assertSequenceEqual(actual, expected)
 
     def test_corpus_vectorization(self):
+        print(self.data.corpus_tokens)
+        print(self.data.corpus_counts.toarray())
         self.assertEqual(
             self.data.corpus_tokens,
-            ['abstract',
-             'article',
-             'breakthrough',
-             'interest',
-             'paper']
+            ['abstract', 'article', 'breakthrough', 'interest', 'paper']
         )
-        # print(self.data.corpus_counts.toarray())
         self.assertTrue(np.array_equal(
             self.data.corpus_counts.toarray(),
             [[0, 1, 0, 0, 1],
              [1, 1, 0, 0, 0],
              [1, 1, 0, 0, 0],
-             [0, 1, 0, 1, 1, ],
+             [0, 1, 0, 1, 1],
              [0, 1, 1, 0, 0]]))
 
 

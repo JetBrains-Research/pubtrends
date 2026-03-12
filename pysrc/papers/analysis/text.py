@@ -160,7 +160,8 @@ def build_stemmed_corpus(df):
     papers_stemmed_sentences = []
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(_process_stemming_batch, batch) for batch in batches]
-        for future in concurrent.futures.as_completed(futures):
+        # Use list comprehension to maintain order (not as_completed which is non-deterministic)
+        for future in futures:
             batch_result = future.result()
             papers_stemmed_sentences.extend(batch_result)
 
