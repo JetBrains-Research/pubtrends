@@ -32,9 +32,9 @@ def preprocess_search_query_for_postgres(query):
     query = re.sub("'s$", '', query)
     query = re.sub("'s\\s", ' ', query)
     # Escaping
-    query = re.sub("[\^&'|<>=]+", '', query)
+    query = re.sub(r"[\^&'|<>=]+", '', query)
     # Whitespaces normalization, see #215
-    query = re.sub('\s{2,}', ' ', query.strip())
+    query = re.sub(r'\s{2,}', ' ', query.strip())
     query = query.strip(', ')  # Strip trailing spaces and commas
 
     if len(query) == 0:
@@ -78,7 +78,7 @@ def preprocess_search_query_for_postgres(query):
     phrases_manuals_result = ' AND '.join(phrases_manuals) if phrases_manuals else ''
 
     # Processing words
-    rest_words = re.sub('\s{2,}', ' ', query).strip()
+    rest_words = re.sub(r'\s{2,}', ' ', query).strip()
     words = rest_words.split(' ')
     words_result = ' & '.join(words) if words else ''
 

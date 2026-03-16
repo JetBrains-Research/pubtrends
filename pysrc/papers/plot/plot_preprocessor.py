@@ -145,7 +145,7 @@ class PlotPreprocessor:
 
     @staticmethod
     def compute_clusters_dendrogram_children(clusters, children):
-        """
+        r"""
         :param clusters: Clusters list for elements
         :param children: Hierarchical clustering dendrogram encoding, list of pairs of groups to connect.
         Three clusters (0, 1) + (2, 3) + (4), with children  [0, 1], [2, 3], [5, 6], [4, 7] encodes dendrogram:

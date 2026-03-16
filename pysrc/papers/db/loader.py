@@ -119,7 +119,7 @@ class Loader(metaclass=ABCMeta):
     def titles_to_list(titles):
         titles2search = []
         titles = titles.strip()
-        titles = re.sub('\.$', '', titles)
+        titles = re.sub(r'\.$', '', titles)
         titles = preprocess_quotes(titles)
         for t in titles.split(';'):
             if t.strip() != '':
@@ -135,9 +135,9 @@ class Loader(metaclass=ABCMeta):
         query = re.sub("'s$", '', query)
         query = re.sub("'s\\s", ' ', query)
         # Whitespaces normalization, see #215
-        query = re.sub('\s{2,}', ' ', query.strip())
+        query = re.sub(r'\s{2,}', ' ', query.strip())
         # Ignore non-latin letters
-        query = ' '.join(w for w in query.lower().split(' ') if re.match('^[a-z0-9\-+]+$', w))
+        query = ' '.join(w for w in query.lower().split(' ') if re.match(r'^[a-z0-9\-+]+$', w))
         try:
             search_ids = self.search(query, limit=10, sort=None, noreviews=False)
             if search_ids:
