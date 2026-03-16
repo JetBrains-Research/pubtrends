@@ -152,7 +152,11 @@ class AnalysisData:
             chunks_idx = [tuple(idx) for idx in chunks_idx]
 
         # Restore citation and structure graphs
-        papers_graph = json_graph.node_link_graph(fields['papers_graph'])
+        papers_graph_data = fields['papers_graph']
+        # Handle both 'links' (default) and 'edges' keys for backward compatibility
+        if 'links' in papers_graph_data and 'edges' not in papers_graph_data:
+            papers_graph_data['edges'] = papers_graph_data['links']
+        papers_graph = json_graph.node_link_graph(papers_graph_data)
 
         # Restore dendrogram
         dendrogram = fields['dendrogram']
