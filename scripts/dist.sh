@@ -26,7 +26,7 @@ PTV=pubtrends-${VERSION_BUILD}
 
 echo "Copy sources"
 mkdir -p "${PTV}"
-cp resources/docker/main/Dockerfile "${PTV}"/
+cp Dockerfile "${PTV}"/
 cp config.properties "${PTV}"/
 cp -r docker-compose "${PTV}"/
 cp -r scripts "${PTV}"/

@@ -17,18 +17,15 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -r pyproject.toml
 ```
 
-3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing:
+3. Build the base Docker image `biolabs/pubtrends`:
 
 ```bash
-docker build -f resources/docker/main/Dockerfile -t biolabs/pubtrends --platform linux/amd64  .
-docker build  -f resources/docker/test/Dockerfile -t biolabs/pubtrends-test --platform linux/amd64 .
+docker build -t biolabs/pubtrends --platform linux/amd64 .
 ```
 
-## Docker Images
+## Docker Image
 
-Two Docker images are used for testing, development and deployment:
-* [biolabs/pubtrends](resources/docker/main/Dockerfile) - production
-* [biolabs/pubtrends-test](resources/docker/test/Dockerfile) - testing
+The base Docker image [biolabs/pubtrends](../Dockerfile) is used for development and deployment.
 
 We use [Docker Hub](https://hub.docker.com/) to store built images.
 
@@ -134,40 +131,21 @@ jupyter notebook
 
 ## Testing
 
-### 1. Start Test Database
+Python database tests use [Testcontainers](https://testcontainers.com/) to automatically start a PostgreSQL 17
+container. No manual database setup is needed — just ensure Docker is running.
 
-Start a Docker image with a Postgres environment for tests (Kotlin and Python development):
+### 1. Python Tests
 
-```bash
-docker run --rm --platform linux/amd64 --name pubtrends-test \
---publish=5433:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
-```
-
-**NOTE**: remember to stop the container afterward.
-
-### 2. Kotlin Tests
-
-```bash
-./gradlew clean test
-```
-
-### 3. Python Tests
-
-Python tests with code style check for development (including integration with Kotlin DB writers):
+Python tests with code style check (database container starts automatically via Testcontainers):
 
 ```bash
 source .venv/bin/activate; pytest pysrc
 ```
 
-### 4. Python Tests within Docker
-
-Ensure that `./build/libs/pubtrends-dev.jar` file is present:
+### 2. Kotlin Tests
 
 ```bash
-docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
-"/usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start; \
-cd /pubtrends; cp config.properties /home/user/.pubtrends/; \
-pytest pysrc"
+./gradlew clean test
 ```
 
 ## Deployment

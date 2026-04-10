@@ -41,7 +41,7 @@ It uses:
 * Visualization: [Bokeh](https://bokeh.org/), [Holoviews](https://holoviews.org/), [Seaborn](https://seaborn.pydata.org/), [Matplotlib](https://matplotlib.org/)
 * Frontend: [Bootstrap](https://getbootstrap.com/), [jQuery](https://jquery.com/), [Cytoscape.js](https://js.cytoscape.org/)
 * Deployment: [Docker Compose](https://docs.docker.com/compose/)
-* Testing: [PyTest](https://docs.pytest.org/en/stable/) + [Flake8](https://flake8.pycqa.org/en/latest/) + [JUnit](https://junit.org/) + [TeamCity](https://www.jetbrains.com/teamcity/)
+* Testing: [PyTest](https://docs.pytest.org/en/stable/) + [Testcontainers](https://testcontainers.com/) + [Flake8](https://flake8.pycqa.org/en/latest/) + [JUnit](https://junit.org/) + [TeamCity](https://www.jetbrains.com/teamcity/)
 
 See [pyproject.toml](pyproject.toml) for the full list of libraries used in the project.
 

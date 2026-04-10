@@ -8,7 +8,7 @@ from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import SORT_MOST_CITED, IDS_ANALYSIS_TYPE
 from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
 
-PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+PUBTRENDS_CONFIG = PubtrendsConfig()
 
 
 class TestBuildGraph(unittest.TestCase):

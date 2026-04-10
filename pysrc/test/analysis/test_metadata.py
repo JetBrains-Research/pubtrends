@@ -11,7 +11,7 @@ from pysrc.test.mock_loaders import MockLoader
 
 
 class TestPaperMetadata(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+    PUBTRENDS_CONFIG = PubtrendsConfig()
 
     @classmethod
     def setUpClass(cls):

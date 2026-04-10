@@ -184,7 +184,11 @@ class PubtrendsConfig:
     # Deployment and development
     CONFIG_PATHS = ['/config', os.path.expanduser('~/.pubtrends')]
 
-    def __init__(self, test=True):
+    # Class-level override set by test fixtures (e.g. Testcontainers).
+    # When set, all new PubtrendsConfig instances use these DB settings.
+    _default_postgres_override = None
+
+    def __init__(self, postgres_override=None, **kwargs):
         config_parser = configparser.ConfigParser()
 
         # Add a fake section [params] for ConfigParser to accept the file
@@ -198,11 +202,20 @@ class PubtrendsConfig:
         params = config_parser['params']
 
         # DB config
-        self.postgres_host = params['postgres_host' if not test else 'test_postgres_host']
-        self.postgres_port = params['postgres_port' if not test else 'test_postgres_port']
-        self.postgres_username = params['postgres_username' if not test else 'test_postgres_username']
-        self.postgres_password = params['postgres_password' if not test else 'test_postgres_password']
-        self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
+        self.postgres_host = params['postgres_host']
+        self.postgres_port = params['postgres_port']
+        self.postgres_username = params['postgres_username']
+        self.postgres_password = params['postgres_password']
+        self.postgres_database = params['postgres_database']
+
+        # Override with testcontainers or other dynamic config
+        override = postgres_override or PubtrendsConfig._default_postgres_override
+        if override:
+            self.postgres_host = override.get('host', self.postgres_host)
+            self.postgres_port = str(override.get('port', self.postgres_port))
+            self.postgres_username = override.get('username', self.postgres_username)
+            self.postgres_password = override.get('password', self.postgres_password)
+            self.postgres_database = override.get('database', self.postgres_database)
 
         # Embeddings DB config
         self.embeddings_postgres_host = params['embeddings_postgres_host']

@@ -8,30 +8,60 @@ import org.jetbrains.bio.pubtrends.ss.SS_EXTRA_CITATIONS
 import org.jetbrains.bio.pubtrends.ss.SS_REQUIRED_ARTICLES
 import org.jetbrains.bio.pubtrends.ss.SS_REQUIRED_CITATIONS
 import org.slf4j.LoggerFactory
-import java.util.*
 
 /**
- * Class to save single publication into test db
+ * Class to save single publication into test db.
+ *
+ * Usage: DBWriter <WriterClass> --host <host> --port <port> --database <db> --username <user> --password <pass>
  */
 class DBWriter {
     companion object {
         private val LOG = LoggerFactory.getLogger(DBWriter::class.java)
 
+        data class DbParams(
+            val host: String,
+            val port: Int,
+            val database: String,
+            val username: String,
+            val password: String
+        )
+
+        private fun parseArgs(args: Array<String>): Pair<List<String>, DbParams> {
+            val writers = mutableListOf<String>()
+            var host = "localhost"
+            var port = 5432
+            var database = "test_pubtrends"
+            var username = "biolabs"
+            var password = "mysecretpassword"
+
+            var i = 0
+            while (i < args.size) {
+                when (args[i]) {
+                    "--host" -> { host = args[++i] }
+                    "--port" -> { port = args[++i].toInt() }
+                    "--database" -> { database = args[++i] }
+                    "--username" -> { username = args[++i] }
+                    "--password" -> { password = args[++i] }
+                    else -> writers.add(args[i])
+                }
+                i++
+            }
+            return Pair(writers, DbParams(host, port, database, username, password))
+        }
 
         @JvmStatic
         fun main(args: Array<String>) {
-            // Load configuration file
-            val (config, _, _) = Config.load()
+            val (writers, db) = parseArgs(args)
 
-            for (arg in args) {
-                LOG.info("Processing $arg")
-                when (arg) {
+            for (writer in writers) {
+                LOG.info("Processing $writer")
+                when (writer) {
                     PubmedPostgresWriter::class.java.simpleName -> {
-                        createPubmedPostgresWriter(config).use {
+                        createPubmedPostgresWriter(db).use {
                             LOG.info("Reset")
                             it.reset()
                         }
-                        createPubmedPostgresWriter(config).use {
+                        createPubmedPostgresWriter(db).use {
                             LOG.info("Store")
                             it.store(
                                 PM_REQUIRED_ARTICLES + PM_EXTRA_ARTICLES + listOf(PM_EXTRA_ARTICLE),
@@ -42,7 +72,7 @@ class DBWriter {
 
                     SemanticScholarPostgresWriter::class.java.simpleName -> {
                         createSemanticScholarPostgresWriter(
-                            config,
+                            db,
                             initIndexesAndMatView = false,
                             finishFillDatabase = false
                         ).use {
@@ -50,7 +80,7 @@ class DBWriter {
                             it.reset()
                         }
                         createSemanticScholarPostgresWriter(
-                            config,
+                            db,
                             initIndexesAndMatView = false,
                             finishFillDatabase = false
                         ).use {
@@ -62,44 +92,34 @@ class DBWriter {
                         }
                         // Create indexes and update them
                         createSemanticScholarPostgresWriter(
-                            config,
+                            db,
                             initIndexesAndMatView = true,
                             finishFillDatabase = true
                         ).close()
                     }
 
-                    else -> LOG.error("Unknown arg $arg")
+                    else -> LOG.error("Unknown arg $writer")
                 }
                 LOG.info("Done")
             }
-            if (args.isEmpty())
+            if (writers.isEmpty())
                 println("Welcome to Pubtrends! See README.md for deployment instructions.")
         }
 
         private fun createSemanticScholarPostgresWriter(
-            config: Properties,
+            db: DbParams,
             initIndexesAndMatView: Boolean,
             finishFillDatabase: Boolean
-
         ): SemanticScholarPostgresWriter {
             return SemanticScholarPostgresWriter(
-                config["test_postgres_host"]!!.toString(),
-                config["test_postgres_port"]!!.toString().toInt(),
-                config["test_postgres_database"]!!.toString(),
-                config["test_postgres_username"]!!.toString(),
-                config["test_postgres_password"]!!.toString(),
-                initIndexesAndMatView,
-                finishFillDatabase
+                db.host, db.port, db.database, db.username, db.password,
+                initIndexesAndMatView, finishFillDatabase
             )
         }
 
-        private fun createPubmedPostgresWriter(config: Properties): PubmedPostgresWriter {
+        private fun createPubmedPostgresWriter(db: DbParams): PubmedPostgresWriter {
             return PubmedPostgresWriter(
-                config["test_postgres_host"]!!.toString(),
-                config["test_postgres_port"]!!.toString().toInt(),
-                config["test_postgres_database"]!!.toString(),
-                config["test_postgres_username"]!!.toString(),
-                config["test_postgres_password"]!!.toString()
+                db.host, db.port, db.database, db.username, db.password
             )
         }
     }
