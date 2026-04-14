@@ -14,7 +14,7 @@ Please ensure that you have a database configured, up and running. See [DATABASE
 ```bash
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv pip install -r pyproject.toml
+uv pip install -r pyproject.toml  --extra-index-url https://download.pytorch.org/whl
 ```
 
 3. Build the base Docker image `biolabs/pubtrends`:
@@ -63,8 +63,8 @@ docker run \
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -r pyproject.toml
-uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
-uv pip install --no-cache sentence-transformers faiss-cpu jupyter notebook
+uv sync --no-install-project --extra gpu
+export PUBTRENDS_EMBEDDINGS_BACKEND=torch
 ```
 
 4. Start Celery worker queue:
@@ -75,7 +75,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
 ```
 
-5. Start flask server at http://localhost:5000/:
+5. Start a Flask server at http://localhost:5000/:
 
 ```bash
 source .venv/bin/activate
