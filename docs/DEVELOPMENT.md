@@ -20,7 +20,7 @@ uv pip install -r pyproject.toml  --extra-index-url https://download.pytorch.org
 3. Build the base Docker image `biolabs/pubtrends`:
 
 ```bash
-docker build -t biolabs/pubtrends --platform linux/amd64 .
+docker build --platform linux/amd64 -t biolabs/pubtrends .
 ```
 
 ## Docker Image
@@ -139,10 +139,43 @@ container. No manual database setup is needed — just ensure Docker is running.
 Python tests with code style check (database container starts automatically via Testcontainers):
 
 ```bash
+uv sync --no-install-project --extra test
 source .venv/bin/activate; pytest pysrc
 ```
 
-### 2. Kotlin Tests
+### 2. Python Tests in Docker
+
+You can run Python tests inside Docker. First, build the test image that adds Java 21
+(needed for Kotlin loader tests) on top of the base image:
+
+```bash
+docker build --platform=linux/amd64 -t biolabs/pubtrends-test -f Dockerfile-test .
+```
+
+Then run tests. This requires Docker-in-Docker (mounting the Docker socket) so that
+Testcontainers can start a PostgreSQL container from within the image.
+
+```bash
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --group-add 0 \
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+  -v "$(pwd)/pysrc:/home/user/pubtrends/pysrc" \
+  -v "$(pwd)/scripts:/home/user/pubtrends/scripts" \
+  -v "$(pwd)/config.properties:/home/user/pubtrends/config.properties" \
+  -v "$(pwd)/build/libs/pubtrends-dev.jar:/home/user/pubtrends/build/libs/pubtrends-dev.jar" \
+  biolabs/pubtrends-test \
+  bash -c "cd ~/pubtrends && bash scripts/init.sh && cp config.properties ~/.pubtrends/ && bash scripts/nlp.sh && pytest pysrc"
+```
+
+**Notes:**
+* `-v /var/run/docker.sock:/var/run/docker.sock` — lets Testcontainers create sibling containers.
+* `--group-add 0` — adds the container user to the root group so it can access the Docker socket.
+* `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` — tells Testcontainers how to reach the
+  PostgreSQL container started on the Docker host (required on Docker Desktop for Mac/Windows;
+  on Linux you may also need `--add-host=host.docker.internal:host-gateway`).
+
+### 3. Kotlin Tests
 
 ```bash
 ./gradlew clean test

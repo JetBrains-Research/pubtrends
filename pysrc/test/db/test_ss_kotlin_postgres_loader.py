@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import unittest
 
@@ -10,6 +11,18 @@ from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES
 PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
 
 
+def _find_java():
+    """Find java binary via JAVA_HOME or PATH."""
+    java_home = os.environ.get('JAVA_HOME')
+    if java_home:
+        candidate = os.path.join(java_home, 'bin', 'java')
+        if os.path.isfile(candidate):
+            return candidate
+    return shutil.which('java')
+
+
+@unittest.skipUnless(_find_java(), 'Java not found')
+@unittest.skipUnless(os.path.isfile(PUBTRENDS_JAR), f'{PUBTRENDS_JAR} not found')
 class TestSemanticScholarKotlinPostgresLoader(unittest.TestCase, AbstractTestSemanticScholarLoader):
 
     @classmethod
@@ -18,7 +31,7 @@ class TestSemanticScholarKotlinPostgresLoader(unittest.TestCase, AbstractTestSem
         cls.loader = SemanticScholarPostgresLoader(cls.test_config)
         cfg = cls.test_config
         subprocess.run([
-            'java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter',
+            _find_java(), '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter',
             'SemanticScholarPostgresWriter',
             '--host', cfg.postgres_host,
             '--port', str(cfg.postgres_port),

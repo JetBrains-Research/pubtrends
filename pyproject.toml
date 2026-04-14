@@ -29,7 +29,6 @@ dependencies = [
     "psutil",
     "psycopg2-binary",
     "pyarrow",
-    "pytest",
     "requests",
     "scikit-learn",
     "scipy",
@@ -45,12 +44,9 @@ dependencies = [
     "gunicorn",
     "redis",
     "lazy",
-    "pytest-flake8",
     "python-levenshtein",
     "shapely",
-    "teamcity-messages",
     "text2num",
-    "testcontainers[postgres]",
     "vine",
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     "biopython",
@@ -71,6 +67,12 @@ explicit = true
 torch = [{ index = "pytorch-cpu" }]
 
 [project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-flake8",
+    "teamcity-messages",
+    "testcontainers[postgres]",
+]
 gpu = [
     "sentence-transformers",
     "torch",

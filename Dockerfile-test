@@ -1,0 +1,14 @@
+# Test image that adds Java 21 and test dependencies to the base pubtrends image.
+# Build: docker build --platform=linux/amd64 -t biolabs/pubtrends-test -f Dockerfile-test .
+
+FROM eclipse-temurin:21-jre AS jdk
+FROM biolabs/pubtrends
+
+COPY --from=jdk /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
+# Install test dependencies (pytest, testcontainers, etc.)
+COPY --chown=user:pubtrends pyproject.toml /home/user/pyproject.toml
+RUN uv sync --no-install-project --extra test --extra-index-url https://download.pytorch.org/whl/cpu \
+    && rm -rf /home/user/.cache
