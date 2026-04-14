@@ -157,9 +157,10 @@ def _random_walks(
             task_seed
         ))
 
-    # Execute walks in parallel using processes
+    # Execute walks in parallel using threads (ProcessPoolExecutor cannot be used
+    # inside Celery workers because daemonic processes cannot spawn children)
     all_walks = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = executor.map(_perform_walks_for_all_nodes, tasks)
         for batch_walks in results:
             all_walks.extend(batch_walks)

@@ -156,9 +156,10 @@ def build_stemmed_corpus(df):
     batch_size = max(1, int(ceil(len(texts) / max_workers)))
     batches = list(sliced(texts, batch_size))
 
-    # Process in parallel using processes (avoids GIL limitations)
+    # Process in parallel using threads (ProcessPoolExecutor cannot be used
+    # inside Celery workers because daemonic processes cannot spawn children)
     papers_stemmed_sentences = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(_process_stemming_batch, batch) for batch in batches]
         # Use list comprehension to maintain order (not as_completed which is non-deterministic)
         for future in futures:
@@ -371,8 +372,9 @@ def parallel_collect_chunks(
     parallel_batches = [(b, max_tokens, overlap_sentences)
                         for b in sliced(list(zip(pids, texts)), int(ceil(len(texts) / max_workers)))]
 
-    # Process texts in parallel processes
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+    # Process texts in parallel using threads (ProcessPoolExecutor cannot be used
+    # inside Celery workers because daemonic processes cannot spawn children)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all tasks and wait for results
         results = list(executor.map(collect_papers_chunks, parallel_batches))
 
