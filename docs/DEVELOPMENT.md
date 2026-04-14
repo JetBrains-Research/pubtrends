@@ -143,7 +143,7 @@ uv sync --no-install-project --extra test
 source .venv/bin/activate; pytest pysrc
 ```
 
-### 2. Python Tests in Docker
+### 2. Python Tests in Docker for CI
 
 You can run Python tests inside Docker. First, build the test image that adds Java 21
 (needed for Kotlin loader tests) on top of the base image:
@@ -158,7 +158,9 @@ Testcontainers can start a PostgreSQL container from within the image.
 ```bash
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  --add-host=host.docker.internal:host-gateway \
   --group-add 0 \
+  -e TESTCONTAINERS_RYUK_DISABLED=true \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
   -v "$(pwd):/pubtrends" \
   biolabs/pubtrends-test \
