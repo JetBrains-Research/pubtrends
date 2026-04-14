@@ -160,12 +160,9 @@ docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --group-add 0 \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-  -v "$(pwd)/pysrc:/home/user/pubtrends/pysrc" \
-  -v "$(pwd)/scripts:/home/user/pubtrends/scripts" \
-  -v "$(pwd)/config.properties:/home/user/pubtrends/config.properties" \
-  -v "$(pwd)/build/libs/pubtrends-dev.jar:/home/user/pubtrends/build/libs/pubtrends-dev.jar" \
+  -v "$(pwd):/pubtrends" \
   biolabs/pubtrends-test \
-  bash -c "cd ~/pubtrends && bash scripts/init.sh && cp config.properties ~/.pubtrends/ && bash scripts/nlp.sh && pytest pysrc"
+  bash -c "cd /pubtrends && bash scripts/init.sh && cp config.properties ~/.pubtrends/ && bash scripts/nlp.sh && pytest pysrc"
 ```
 
 **Notes:**
