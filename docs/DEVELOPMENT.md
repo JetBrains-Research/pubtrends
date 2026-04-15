@@ -163,8 +163,9 @@ docker run --rm \
   -e TESTCONTAINERS_RYUK_DISABLED=true \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
   -v "$(pwd):/pubtrends" \
+  -w /pubtrends \
   biolabs/pubtrends-test \
-  bash -c "cd /pubtrends && bash scripts/init.sh && cp config.properties ~/.pubtrends/ && bash scripts/nlp.sh && pytest pysrc"
+  bash -c "bash scripts/init.sh && cp config.properties ~/.pubtrends/ && bash scripts/nlp.sh && pytest pysrc"
 ```
 
 **Notes:**
