@@ -12,7 +12,7 @@ from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMB
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals, strs_to_vals
+    process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
@@ -33,15 +33,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def search_id(self, pids):
         self.check_connection()
         pids2search = self.pids_to_list(pids)
-        vals = ints_to_vals(pids2search)
-        query = f'''
+        query = '''
                 SELECT pmid
                 FROM PMPublications P
-                WHERE P.pmid = ANY ('{{{vals}}}'::integer[]); 
+                WHERE P.pmid = ANY(%s);
             '''
-        logger.debug(f'find query: {query[:1000]}')
+        logger.debug(f'find query: {query}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (pids2search,))
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
         return list(df['pmid'].astype(str))
 
@@ -59,15 +58,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def search_doi(self, dois):
         self.check_connection()
         dois2search = self.dois_to_list(dois)
-        vals = strs_to_vals(dois2search)
-        query = f'''
+        query = '''
                 SELECT pmid
                 FROM PMPublications P
-                WHERE doi in (VALUES {vals});
+                WHERE doi = ANY(%s);
             '''
-        logger.debug(f'find query: {query[:1000]}')
+        logger.debug(f'find query: {query}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (dois2search,))
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
         return list(df['pmid'].astype(str))
 

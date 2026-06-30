@@ -47,6 +47,23 @@ class TestPubmedPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader):
     def get_cocitations_dataframe(self):
         return self.cocit_df
 
+    def test_search_doi_sql_injection_returns_no_results(self):
+        # A UNION injection would return pmid=1 with the old f-string query construction.
+        # With parameterized queries the payload is treated as a literal string, returning nothing.
+        injection = "10.000/injected') UNION SELECT pmid FROM PMPublications WHERE pmid = 1 -- "
+        result = self.loader.search_doi(injection)
+        self.assertEqual([], result)
+
+    def test_search_doi_single_quote_does_not_raise(self):
+        # A DOI containing a single quote must not cause a database syntax error.
+        result = self.loader.search_doi("10.000/title's-doi")
+        self.assertEqual([], result)
+
+    def test_search_id_non_integer_raises(self):
+        # Non-integer PMIDs must be rejected before the query is executed.
+        with self.assertRaises(Exception):
+            self.loader.search_id("1 OR 1=1")
+
 
 if __name__ == "__main__":
     unittest.main()
