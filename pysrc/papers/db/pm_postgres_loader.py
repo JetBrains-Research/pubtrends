@@ -301,7 +301,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def expand(self, ids, limit, noreviews):
         self.check_connection()
-        vals = ints_to_vals(ids)
         noreviews_filter = "AND P.type != 'Review'" if noreviews else ''
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -311,20 +310,20 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
                 WHERE C.pmid_in != C.pmid_out AND
-                C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND
-                NOT (C.pmid_in = ANY ('{{{vals}}}'::integer[]))
+                C.pmid_out = ANY (%s) AND
+                NOT (C.pmid_in = ANY (%s))
                 {noreviews_filter}
-                LIMIT {int(limit * 0.75)})
+                LIMIT %s)
                 UNION
                 (SELECT C.pmid_out AS pmid
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
                 WHERE C.pmid_in != C.pmid_out AND
-                C.pmid_in = ANY ('{{{vals}}}'::integer[]) AND
-                NOT (C.pmid_out = ANY ('{{{vals}}}'::integer[]))
+                C.pmid_in = ANY (%s) AND
+                NOT (C.pmid_out = ANY (%s))
                 {noreviews_filter}
-                LIMIT {int(limit * 0.75)})
+                LIMIT %s)
             )
             SELECT X.pmid as pmid, count
                 FROM X
@@ -335,7 +334,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            vals = to_int_list(ids)
+            limit = int(limit * 0.75)
+            cursor.execute(query, (vals, vals, limit, vals, vals, limit))
             df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
