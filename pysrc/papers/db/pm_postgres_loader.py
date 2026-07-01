@@ -236,17 +236,16 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_citations_counts(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''
                 SELECT count
                 FROM PMPublications P
                     LEFT JOIN matview_pmcitations C
                     ON P.pmid = C.pmid
-                WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
+                WHERE P.pmid = ANY (%s);
                 '''
         logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids),))
             df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
             df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
 
