@@ -168,15 +168,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_publications(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''
                 SELECT P.pmid as id, title, abstract, year, type, keywords, mesh, doi, aux
                 FROM PMPublications P
-                WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
+                WHERE P.pmid = ANY (%s);
                 '''
         logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, ([int(val) for val in ids], ))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id', 'title', 'abstract', 'year',
                                        'type', 'keywords', 'mesh', 'doi', 'aux'],
