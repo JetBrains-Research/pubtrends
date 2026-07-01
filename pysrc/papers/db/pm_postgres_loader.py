@@ -253,18 +253,18 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_citations(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''SELECT DISTINCT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
                     WHERE pmid_out != pmid_in AND 
-                    pmid_in = ANY ('{{{vals}}}'::integer[]) AND 
-                    pmid_out = ANY ('{{{vals}}}'::integer[])
+                    pmid_in = ANY (%s) AND 
+                    pmid_out = ANY (%s)
                     ORDER BY id_out, id_in
-                    LIMIT {MAX_NUMBER_OF_CITATIONS};
+                    LIMIT %s;
                     '''
         logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            vals = to_int_list(ids)
+            cursor.execute(query, (vals, vals, MAX_NUMBER_OF_CITATIONS))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id_out', 'id_in'],
                               dtype=object)
