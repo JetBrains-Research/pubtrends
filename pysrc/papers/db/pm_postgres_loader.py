@@ -344,17 +344,16 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_bibliographic_coupling(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(DISTINCT C.pmid_out) as citing_list
                     FROM PMCitations C
-                    WHERE C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND C.pmid_in != C.pmid_out
+                    WHERE C.pmid_out = ANY (%s) AND C.pmid_in != C.pmid_out
                     GROUP BY cited
                     HAVING COUNT(DISTINCT C.pmid_out) >= 2
-                    LIMIT {MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING};
+                    LIMIT %s;
                     '''
 
         logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids), MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING))
             df = process_bibliographic_coupling_postgres(ids, cursor)
         return df
