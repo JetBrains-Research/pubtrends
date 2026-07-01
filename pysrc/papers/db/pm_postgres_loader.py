@@ -74,14 +74,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         titles2search = self.titles_to_list(titles)
         pids = []
         for t in titles2search:
-            query = f'''
+            query = """
                 SELECT pmid
-                FROM to_tsquery(\'''{t}\''') query, PMPublications P
-                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{t}');
-            '''
+                FROM to_tsquery(''%s'') query, PMPublications P
+                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER(%s);
+            """
             logger.debug(f'find query: {query[:1000]}')
             with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
+                cursor.execute(query, (t, t))
                 df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
                 if len(df) > 0:
                     pids.extend(df['pmid'].astype(str))
