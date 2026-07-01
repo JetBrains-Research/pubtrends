@@ -218,20 +218,19 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_references(self, pid, limit):
         self.check_connection()
-        vals = ints_to_vals([pid])
         query = f'''
                 SELECT C.pmid_in AS pmid
                 FROM PMCitations C 
                 JOIN matview_pmcitations MC
                     ON C.pmid_in = MC.pmid
                 WHERE C.pmid_in != C.pmid_out AND 
-                C.pmid_out = ANY ('{{{vals}}}'::integer[])
+                C.pmid_out = ANY (%s)
                 ORDER BY MC.count DESC NULLS LAST
-                LIMIT {limit};
+                LIMIT %s;
                 '''
         logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list([pid]), limit))
             df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
