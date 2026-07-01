@@ -278,21 +278,20 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_cocitations(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(DISTINCT C.pmid_in) as cited_list
                         FROM PMCitations C
                         JOIN PMPublications P
                             ON C.pmid_out = P.pmid
                         WHERE C.pmid_in != C.pmid_out AND
-                        C.pmid_in = ANY ('{{{vals}}}'::integer[])
+                        C.pmid_in = ANY (%s)
                         GROUP BY citing, year
                         HAVING COUNT(DISTINCT C.pmid_in) >= 2
-                        LIMIT {MAX_NUMBER_OF_COCITATIONS};
+                        LIMIT %s;
                     '''
 
         logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids), MAX_NUMBER_OF_COCITATIONS))
             df = process_cocitations_postgres(cursor)
 
         if np.any(df[['citing', 'cited_1', 'cited_2']].isna()):
