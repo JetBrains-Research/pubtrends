@@ -12,7 +12,7 @@ from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMB
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals
+    process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals, to_int_list
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
@@ -175,7 +175,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 '''
         logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query, ([int(val) for val in ids], ))
+            cursor.execute(query, (to_int_list(ids),))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id', 'title', 'abstract', 'year',
                                        'type', 'keywords', 'mesh', 'doi', 'aux'],
@@ -187,23 +187,22 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_citations_by_year(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''
             WITH X as (SELECT pmid_in, pmid_out
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_in = P.pmid
-                WHERE C.pmid_in != C.pmid_out AND P.pmid = ANY ('{{{vals}}}'::integer[]))
+                WHERE C.pmid_in != C.pmid_out AND P.pmid = ANY (%s))
             SELECT X.pmid_in AS id, year, COUNT(1) AS count
             FROM X
                 JOIN PMPublications P
                 ON X.pmid_out = P.pmid
                 GROUP BY id, year
-                LIMIT {MAX_NUMBER_OF_CITATIONS};
+                LIMIT %s;
             '''
         logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids), MAX_NUMBER_OF_CITATIONS))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id', 'year', 'count'],
                               dtype=object)
