@@ -16,7 +16,6 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 def semantic_search_faiss_embedding(faiss_index, pids_idx, query_embedding, k):
-    # Normalize embeddings if using cosine similarity
     query_embedding = l2norm(query_embedding)
 
     # Validate embedding dimension matches FAISS index
