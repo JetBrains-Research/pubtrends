@@ -39,7 +39,7 @@ class FaissConnector:
     def create_faiss(self):
         if self.exact:
             print('Exact search index')
-            index = faiss.IndexFlatIP(self.embeddings_dimension)
+            index = faiss.IndexFlatL2(self.embeddings_dimension)
         else:
             print('Approximate search index')
             quantizer = faiss.IndexFlatL2(self.embeddings_dimension)

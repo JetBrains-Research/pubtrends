@@ -16,7 +16,6 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 def semantic_search_faiss_embedding(faiss_index, pids_idx, query_embedding, k):
-    # Normalize embeddings if using cosine similarity
     query_embedding = l2norm(query_embedding)
 
     # Validate embedding dimension matches FAISS index
@@ -104,7 +103,7 @@ class SemanticSearch:
         for e in embeddings:
             npe = np.array(e).astype('float32').reshape(1, -1)
             ts.append(semantic_search_faiss_embedding(faiss_index, pids_idx, npe, n))
-        result = pd.concat(ts).reset_index(drop=True).sort_values(by='similarity', ascending=False)[:n]
+        result = pd.concat(ts).reset_index(drop=True).sort_values(by='similarity', ascending=True)[:n]
         return result
 
     @staticmethod
@@ -114,7 +113,7 @@ class SemanticSearch:
         df = connector.load_publications(pmids)
         df = df.merge(result, on='pmid', how='left')
         # Prioritize recent papers with the same relevance
-        df = df.sort_values(by=['similarity', 'year'], ascending=False)
+        df = df.sort_values(by=['similarity', 'year'], ascending=[True, False])
 
         # Make empty abstracts less similar
         empty_abstracts_mask = df['abstract'].isna() | (df['abstract'].str.strip() == '')
