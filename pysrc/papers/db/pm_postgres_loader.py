@@ -12,7 +12,7 @@ from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMB
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals, strs_to_vals
+    process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals, to_int_list
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
@@ -33,15 +33,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def search_id(self, pids):
         self.check_connection()
         pids2search = self.pids_to_list(pids)
-        vals = ints_to_vals(pids2search)
-        query = f'''
+        query = '''
                 SELECT pmid
                 FROM PMPublications P
-                WHERE P.pmid = ANY ('{{{vals}}}'::integer[]); 
+                WHERE P.pmid = ANY(%s);
             '''
-        logger.debug(f'find query: {query[:1000]}')
+        logger.debug(f'find query: {query}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (pids2search,))
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
         return list(df['pmid'].astype(str))
 
@@ -59,15 +58,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def search_doi(self, dois):
         self.check_connection()
         dois2search = self.dois_to_list(dois)
-        vals = strs_to_vals(dois2search)
-        query = f'''
+        query = '''
                 SELECT pmid
                 FROM PMPublications P
-                WHERE doi in (VALUES {vals});
+                WHERE doi = ANY(%s);
             '''
-        logger.debug(f'find query: {query[:1000]}')
+        logger.debug(f'find query: {query}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (dois2search,))
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
         return list(df['pmid'].astype(str))
 
@@ -76,14 +74,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         titles2search = self.titles_to_list(titles)
         pids = []
         for t in titles2search:
-            query = f'''
+            query = """
                 SELECT pmid
-                FROM to_tsquery(\'''{t}\''') query, PMPublications P
-                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{t}');
-            '''
+                FROM to_tsquery(''%s'') query, PMPublications P
+                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER(%s);
+            """
             logger.debug(f'find query: {query[:1000]}')
             with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
+                cursor.execute(query, (t, t))
                 df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
                 if len(df) > 0:
                     pids.extend(df['pmid'].astype(str))
@@ -170,15 +168,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_publications(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''
                 SELECT P.pmid as id, title, abstract, year, type, keywords, mesh, doi, aux
                 FROM PMPublications P
-                WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
+                WHERE P.pmid = ANY (%s);
                 '''
         logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids),))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id', 'title', 'abstract', 'year',
                                        'type', 'keywords', 'mesh', 'doi', 'aux'],
@@ -190,23 +187,22 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_citations_by_year(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''
             WITH X as (SELECT pmid_in, pmid_out
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_in = P.pmid
-                WHERE C.pmid_in != C.pmid_out AND P.pmid = ANY ('{{{vals}}}'::integer[]))
+                WHERE C.pmid_in != C.pmid_out AND P.pmid = ANY (%s))
             SELECT X.pmid_in AS id, year, COUNT(1) AS count
             FROM X
                 JOIN PMPublications P
                 ON X.pmid_out = P.pmid
                 GROUP BY id, year
-                LIMIT {MAX_NUMBER_OF_CITATIONS};
+                LIMIT %s;
             '''
         logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids), MAX_NUMBER_OF_CITATIONS))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id', 'year', 'count'],
                               dtype=object)
@@ -222,36 +218,34 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_references(self, pid, limit):
         self.check_connection()
-        vals = ints_to_vals([pid])
         query = f'''
                 SELECT C.pmid_in AS pmid
                 FROM PMCitations C 
                 JOIN matview_pmcitations MC
                     ON C.pmid_in = MC.pmid
                 WHERE C.pmid_in != C.pmid_out AND 
-                C.pmid_out = ANY ('{{{vals}}}'::integer[])
+                C.pmid_out = ANY (%s)
                 ORDER BY MC.count DESC NULLS LAST
-                LIMIT {limit};
+                LIMIT %s;
                 '''
         logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list([pid]), limit))
             df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
     def load_citations_counts(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''
                 SELECT count
                 FROM PMPublications P
                     LEFT JOIN matview_pmcitations C
                     ON P.pmid = C.pmid
-                WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
+                WHERE P.pmid = ANY (%s);
                 '''
         logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids),))
             df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
             df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
 
@@ -259,18 +253,18 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_citations(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''SELECT DISTINCT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
                     WHERE pmid_out != pmid_in AND 
-                    pmid_in = ANY ('{{{vals}}}'::integer[]) AND 
-                    pmid_out = ANY ('{{{vals}}}'::integer[])
+                    pmid_in = ANY (%s) AND 
+                    pmid_out = ANY (%s)
                     ORDER BY id_out, id_in
-                    LIMIT {MAX_NUMBER_OF_CITATIONS};
+                    LIMIT %s;
                     '''
         logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            vals = to_int_list(ids)
+            cursor.execute(query, (vals, vals, MAX_NUMBER_OF_CITATIONS))
             df = pd.DataFrame(cursor.fetchall(),
                               columns=['id_out', 'id_in'],
                               dtype=object)
@@ -284,21 +278,20 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_cocitations(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(DISTINCT C.pmid_in) as cited_list
                         FROM PMCitations C
                         JOIN PMPublications P
                             ON C.pmid_out = P.pmid
                         WHERE C.pmid_in != C.pmid_out AND
-                        C.pmid_in = ANY ('{{{vals}}}'::integer[])
+                        C.pmid_in = ANY (%s)
                         GROUP BY citing, year
                         HAVING COUNT(DISTINCT C.pmid_in) >= 2
-                        LIMIT {MAX_NUMBER_OF_COCITATIONS};
+                        LIMIT %s;
                     '''
 
         logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids), MAX_NUMBER_OF_COCITATIONS))
             df = process_cocitations_postgres(cursor)
 
         if np.any(df[['citing', 'cited_1', 'cited_2']].isna()):
@@ -308,7 +301,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def expand(self, ids, limit, noreviews):
         self.check_connection()
-        vals = ints_to_vals(ids)
         noreviews_filter = "AND P.type != 'Review'" if noreviews else ''
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -318,20 +310,20 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
                 WHERE C.pmid_in != C.pmid_out AND
-                C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND
-                NOT (C.pmid_in = ANY ('{{{vals}}}'::integer[]))
+                C.pmid_out = ANY (%s) AND
+                NOT (C.pmid_in = ANY (%s))
                 {noreviews_filter}
-                LIMIT {int(limit * 0.75)})
+                LIMIT %s)
                 UNION
                 (SELECT C.pmid_out AS pmid
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
                 WHERE C.pmid_in != C.pmid_out AND
-                C.pmid_in = ANY ('{{{vals}}}'::integer[]) AND
-                NOT (C.pmid_out = ANY ('{{{vals}}}'::integer[]))
+                C.pmid_in = ANY (%s) AND
+                NOT (C.pmid_out = ANY (%s))
                 {noreviews_filter}
-                LIMIT {int(limit * 0.75)})
+                LIMIT %s)
             )
             SELECT X.pmid as pmid, count
                 FROM X
@@ -342,7 +334,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            vals = to_int_list(ids)
+            limit = int(limit * 0.75)
+            cursor.execute(query, (vals, vals, limit, vals, vals, limit))
             df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
@@ -350,17 +344,16 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_bibliographic_coupling(self, ids):
         self.check_connection()
-        vals = ints_to_vals(ids)
         query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(DISTINCT C.pmid_out) as citing_list
                     FROM PMCitations C
-                    WHERE C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND C.pmid_in != C.pmid_out
+                    WHERE C.pmid_out = ANY (%s) AND C.pmid_in != C.pmid_out
                     GROUP BY cited
                     HAVING COUNT(DISTINCT C.pmid_out) >= 2
-                    LIMIT {MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING};
+                    LIMIT %s;
                     '''
 
         logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (to_int_list(ids), MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING))
             df = process_bibliographic_coupling_postgres(ids, cursor)
         return df

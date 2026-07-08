@@ -11,6 +11,10 @@ from pysrc.papers.db.search_error import SearchError
 logger = logging.getLogger(__name__)
 
 
+def to_int_list(xs):
+    return [int(i) for i in xs]
+
+
 def ints_to_vals(xs):
     return ','.join(f'{i}' for i in xs)
 
