@@ -2,10 +2,11 @@ package org.jetbrains.bio.pubtrends.db
 
 import org.jetbrains.bio.pubtrends.ss.SemanticScholarArticle
 import org.jetbrains.bio.pubtrends.ss.crc32id
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.batchInsert
+import org.jetbrains.exposed.v1.jdbc.batchUpsert
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 
 open class SemanticScholarPostgresWriter(
@@ -140,29 +141,23 @@ open class SemanticScholarPostgresWriter(
         LOG.info("Store batch transaction started")
         transaction {
             LOG.info("Batch insert articles")
-            SSPublications.batchInsertOnDuplicateKeyUpdate(
-                articles, listOf(SSPublications.crc32id, SSPublications.ssid),
-                listOf(
-                    SSPublications.pmid,
-                    SSPublications.title,
-                    SSPublications.abstract,
-                    SSPublications.keywords,
-                    SSPublications.year,
-                    SSPublications.doi,
-                    SSPublications.aux
-                )
-            ) { conflict, article ->
-                conflict[ssid] = article.ssid
-                conflict[crc32id] = crc32id(article.ssid)
-                conflict[pmid] = article.pmid
-                conflict[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
+            SSPublications.batchUpsert(
+                articles,
+                SSPublications.crc32id,
+                SSPublications.ssid,
+                shouldReturnGeneratedValues = false
+            ) { article ->
+                this[SSPublications.ssid] = article.ssid
+                this[SSPublications.crc32id] = crc32id(article.ssid)
+                this[SSPublications.pmid] = article.pmid
+                this[SSPublications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (!article.abstract.isNullOrEmpty()) {
-                    conflict[abstract] = article.abstract
+                    this[SSPublications.abstract] = article.abstract
                 }
-                conflict[keywords] = article.keywords
-                conflict[year] = article.year
-                conflict[doi] = article.doi
-                conflict[aux] = article.aux
+                this[SSPublications.keywords] = article.keywords
+                this[SSPublications.year] = article.year
+                this[SSPublications.doi] = article.doi
+                this[SSPublications.aux] = article.aux
             }
         }
         LOG.info("Update TSV vector")
@@ -179,7 +174,7 @@ open class SemanticScholarPostgresWriter(
         }
         LOG.info("Batch insert citations list")
         transaction {
-            SSCitations.batchInsert(citationsList, ignore = true) { citation ->
+            SSCitations.batchInsert(citationsList, ignore = true, shouldReturnGeneratedValues = false) { citation ->
                 this[SSCitations.ssid_out] = citation.first
                 this[SSCitations.ssid_in] = citation.second
                 this[SSCitations.crc32id_out] = crc32id(citation.first)

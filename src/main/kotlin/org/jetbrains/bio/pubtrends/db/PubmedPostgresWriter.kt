@@ -2,8 +2,9 @@ package org.jetbrains.bio.pubtrends.db
 
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 
 open class PubmedPostgresWriter(
@@ -118,7 +119,7 @@ open class PubmedPostgresWriter(
                 // For baseline files, filter out articles that already exist in the database
                 // BUT include those with missing references that now have citations to add
                 val pmids = articles.map { it.pmid }
-                val existingPmids = PMPublications.select { PMPublications.pmid inList pmids }
+                val existingPmids = PMPublications.selectAll().where { PMPublications.pmid inList pmids }
                     .map { it[PMPublications.pmid] }
                     .toSet()
 
@@ -126,7 +127,8 @@ open class PubmedPostgresWriter(
                 val pmidsWithoutCitations = if (existingPmids.isNotEmpty()) {
                     val articlesWithReferences = articles.filter { it.citations.isNotEmpty() }.map { it.pmid }.toSet()
                     PMPublications.leftJoin(PMCitations, { PMPublications.pmid }, { PMCitations.pmidOut })
-                        .select {
+                        .selectAll()
+                        .where {
                             (PMPublications.pmid inList existingPmids) and
                             (PMCitations.pmidOut.isNull())
                         }
@@ -152,30 +154,22 @@ open class PubmedPostgresWriter(
 
             // For updates: insert or update records
             LOG.info("Batch insert or update publications")
-            PMPublications.batchInsertOnDuplicateKeyUpdate(
-                articlesToStore, listOf(PMPublications.pmid),
-                listOf(
-                    PMPublications.title,
-                    PMPublications.abstract,
-                    PMPublications.year,
-                    PMPublications.keywords,
-                    PMPublications.mesh,
-                    PMPublications.type,
-                    PMPublications.doi,
-                    PMPublications.aux
-                )
-            ) { conflict, article ->
-                conflict[pmid] = article.pmid
-                conflict[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
+            PMPublications.batchUpsert(
+                articlesToStore,
+                PMPublications.pmid,
+                shouldReturnGeneratedValues = false
+            ) { article ->
+                this[PMPublications.pmid] = article.pmid
+                this[PMPublications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstract.isNotEmpty()) {
-                    conflict[abstract] = article.abstract
+                    this[PMPublications.abstract] = article.abstract
                 }
-                conflict[year] = article.year
-                conflict[keywords] = article.keywords.joinToString(",")
-                conflict[mesh] = article.mesh.joinToString(",")
-                conflict[type] = article.type
-                conflict[doi] = article.doi
-                conflict[aux] = article.aux
+                this[PMPublications.year] = article.year
+                this[PMPublications.keywords] = article.keywords.joinToString(",")
+                this[PMPublications.mesh] = article.mesh.joinToString(",")
+                this[PMPublications.type] = article.type
+                this[PMPublications.doi] = article.doi
+                this[PMPublications.aux] = article.aux
             }
 
             LOG.info("Update TSV vector")
@@ -193,7 +187,7 @@ open class PubmedPostgresWriter(
             val storedPmids = articlesToStore.map { it.pmid }.toSet()
             val citationsToStore = citationsList.filter { it.first in storedPmids }
             LOG.info("Batch insert citations (${citationsToStore.size} citations)")
-            PMCitations.batchInsert(citationsToStore, ignore = true) { citation ->
+            PMCitations.batchInsert(citationsToStore, ignore = true, shouldReturnGeneratedValues = false) { citation ->
                 this[PMCitations.pmidOut] = citation.first
                 this[PMCitations.pmidIn] = citation.second
             }

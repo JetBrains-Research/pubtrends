@@ -1,10 +1,7 @@
 package org.jetbrains.bio.pubtrends.db
 
-import org.jetbrains.bio.pubtrends.db.SSPublications.crc32id
-import org.jetbrains.bio.pubtrends.db.SSPublications.keywords
-import org.jetbrains.bio.pubtrends.db.SSPublications.ssid
 import org.jetbrains.bio.pubtrends.ss.AuxInfo
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 internal const val MAX_ID_LENGTH = 40
 internal const val MAX_DOI_LENGTH = 100

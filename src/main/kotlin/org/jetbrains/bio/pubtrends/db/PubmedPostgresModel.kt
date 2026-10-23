@@ -2,13 +2,13 @@ package org.jetbrains.bio.pubtrends.db
 
 import org.jetbrains.bio.pubtrends.pm.AuxInfo
 import org.jetbrains.bio.pubtrends.pm.PublicationType
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 /**
  * ORM mapping for [PubmedArticle]
  */
 object PMPublications : Table() {
-    val pmid = integer("pmid").primaryKey()
+    val pmid = integer("pmid")
     val year = integer("year")
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
@@ -21,9 +21,10 @@ object PMPublications : Table() {
     val doi = text("doi").nullable()
     val aux = jsonb("aux", AuxInfo::class.java, jsonMapper)
 
+    override val primaryKey = PrimaryKey(pmid)
+
     init {
         index(false, doi)
-        pmid.primaryKey()
     }
 }
 

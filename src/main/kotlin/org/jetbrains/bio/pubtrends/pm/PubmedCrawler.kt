@@ -71,7 +71,7 @@ class PubmedCrawler(
         }
 
         try {
-            tempDirectory = createTempDir()
+            tempDirectory = kotlin.io.path.createTempDirectory().toFile()
         } catch (e: IOException) {
             throw PubmedCrawlerException("Failed to create temporary directory")
         }

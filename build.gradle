@@ -1,6 +1,7 @@
 buildscript {
-    ext.kotlin_version = "2.2.0"
+    ext.kotlin_version = "2.3.20"
     ext.coroutines_version = "1.7.3"
+    ext.exposed_version = "1.6.0"
 
     repositories {
         maven { url("https://cache-redirector.jetbrains.com/repo1.maven.org/maven2") }
@@ -40,7 +41,10 @@ project (":") {
         implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-        implementation("org.jetbrains.exposed:exposed:0.17.14")
+        implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
+        implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
+        implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
+        implementation("org.jetbrains.exposed:exposed-json:$exposed_version")
         implementation("org.postgresql:postgresql:42.4.0")
         implementation("commons-net:commons-net:3.6")
         implementation("com.opencsv:opencsv:4.6")
