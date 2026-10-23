@@ -8,8 +8,6 @@ PubTrends
 PubTrends is an interactive scientific literature exploration tool that helps researchers analyze topics, visualize
 research trends, and discover related works.
 
-Available online at: https://pubtrends.info/
-
 # Overview
 
 With PubTrends, you can:
