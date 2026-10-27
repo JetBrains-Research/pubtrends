@@ -16,8 +16,6 @@ With PubTrends, you can:
 * Explore popular trends and impactful publications.
 * Discover new and promising research directions.
 
-See an example of the analysis at: https://pubtrends.info/about.html
-
 # Datasets:
 
 * [Pubmed](https://pubmed.ncbi.nlm.nih.gov) ~40 mln papers and 450 mln citations
