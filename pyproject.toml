@@ -54,7 +54,8 @@ dependencies = [
     "faiss-cpu",
     "transformers",
     "optimum[onnxruntime]",
-    "onnxruntime"
+    "onnxruntime",
+    "setuptools<70"
 ]
 
 [tool.uv]
@@ -69,7 +70,7 @@ torch = [{ index = "pytorch-cpu" }]
 [project.optional-dependencies]
 test = [
     "pytest",
-    "pytest-flake8",
+    "flake8",
     "teamcity-messages",
     "testcontainers[postgres]",
 ]

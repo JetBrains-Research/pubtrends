@@ -71,7 +71,7 @@ class Plotter:
                 self.comp_colors = topics_palette_rgb(self.data.df)
 
             n_pub_types = len(self.pub_types)
-            pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)
+            pub_types_cmap = plt.colormaps['jet'].resampled(max(1, n_pub_types))
             self.pub_types_colors_map = dict(
                 zip(self.pub_types, [color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
             )

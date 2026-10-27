@@ -148,11 +148,11 @@ def topics_palette_rgb(df):
 
 def factors_colormap(n):
     if n <= 10:
-        return plt.cm.get_cmap('tab10', n)
+        return plt.colormaps['tab10'].resampled(max(1, n))
     if n <= 20:
-        return plt.cm.get_cmap('tab20', n)
+        return plt.colormaps['tab20'].resampled(max(1, n))
     else:
-        return plt.cm.get_cmap('nipy_spectral', n)
+        return plt.colormaps['nipy_spectral'].resampled(max(1, n))
 
 
 def topics_palette(df):
