@@ -6,6 +6,7 @@ import unittest
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.test.db.abstract_test_pm_loader import AbstractTestPubmedLoader
 from pysrc.test.conftest import get_test_config
+from pysrc.test.db.pm_test_articles import ARTICLES, EXTRA_ARTICLE
 
 PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
 
@@ -37,7 +38,9 @@ class TestPubmedKotlinPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader
             '--database', cfg.postgres_database,
             '--username', cfg.postgres_username,
             '--password', cfg.postgres_password,
-        ])
+        ], check=True)
+        cls.loader.lucene_searcher.reset()
+        cls.loader.lucene_searcher.insert_pubmed_articles(ARTICLES + [EXTRA_ARTICLE])
         # Get data via loader methods
         cls.ids = [1, 2, 3, 4, 5, 6]
         cls.pub_df = cls.loader.load_publications(cls.ids)

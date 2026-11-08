@@ -42,7 +42,7 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                         doi     varchar(100),
                         aux     jsonb
                     );
-                    ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);
+                    ALTER TABLE SSPublications ADD CONSTRAINT crc32id_ssid_key PRIMARY KEY (crc32id, ssid);
                     create index if not exists sspublications_doi_index on sspublications using hash(doi);
                     CREATE INDEX IF NOT EXISTS sspublications_crc32id_year ON sspublications (crc32id, year);
                     '''

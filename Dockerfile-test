@@ -10,5 +10,5 @@ ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Install test dependencies (pytest, testcontainers, etc.)
 COPY --chown=user:pubtrends pyproject.toml /home/user/pyproject.toml
-RUN uv sync --no-install-project --extra test --extra-index-url https://download.pytorch.org/whl/cpu \
+RUN uv sync --no-install-project --extra test \
     && rm -rf /home/user/.cache

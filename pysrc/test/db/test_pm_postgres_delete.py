@@ -22,6 +22,9 @@ class TestPubmedPostgresDelete(unittest.TestCase):
         cls.writer.init_pubmed_database()
         cls.writer.insert_pubmed_publications(ARTICLES)
         cls.writer.insert_pubmed_citations(CITATIONS)
+        cls.writer.check_connection()
+        with cls.writer.postgres_connection.cursor() as cursor:
+            cursor.execute("SET lock_timeout = '2s'")
 
         # Get data via loader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)
@@ -29,6 +32,7 @@ class TestPubmedPostgresDelete(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.loader.close_connection()
+        cls.writer.close_connection()
 
     def test_delete(self):
         self.writer.delete(['2'])

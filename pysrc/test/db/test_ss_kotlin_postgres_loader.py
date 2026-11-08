@@ -6,7 +6,7 @@ import unittest
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 from pysrc.test.db.abstract_test_ss_loader import AbstractTestSemanticScholarLoader
 from pysrc.test.conftest import get_test_config
-from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES
+from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES, EXTRA_ARTICLES
 
 PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
 
@@ -38,7 +38,9 @@ class TestSemanticScholarKotlinPostgresLoader(unittest.TestCase, AbstractTestSem
             '--database', cfg.postgres_database,
             '--username', cfg.postgres_username,
             '--password', cfg.postgres_password,
-        ])
+        ], check=True)
+        cls.loader.lucene_searcher.reset()
+        cls.loader.lucene_searcher.insert_semantic_scholar_articles(REQUIRED_ARTICLES + EXTRA_ARTICLES)
 
         # Get data via loader methods
         cls.ids = list(map(lambda article: article.ssid, REQUIRED_ARTICLES))

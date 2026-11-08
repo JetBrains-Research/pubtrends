@@ -29,7 +29,7 @@ ENV PATH="/home/user/.local/bin:$PATH"
 COPY --chown=user:pubtrends pyproject.toml /home/user/pyproject.toml
 WORKDIR /home/user
 RUN uv venv /home/user/.venv \
-    && uv sync --no-install-project --extra-index-url https://download.pytorch.org/whl/cpu \
+    && uv sync --no-install-project \
     && rm -rf /home/user/.cache
 
 ENV PATH="/home/user/.venv/bin:$PATH"
