@@ -259,6 +259,10 @@ class PubtrendsConfig:
         self.embeddings_model_name = re.sub('[^a-zA-Z0-9]+', '_', self.sentence_transformer_model)
         self.embeddings_dimension = params.getint('embeddings_dimension')
 
+        # Faiss index for semantic search, changing index factory requires rebuilding the index
+        self.faiss_index_factory = params.get('faiss_index_factory', 'IVF65536_HNSW32,PQ64')
+        self.faiss_nprobe = int(params.get('faiss_nprobe', '64'))
+
         # Additional features configuration
         self.feature_semantic_search_enabled = params.getboolean('feature_semantic_search_enabled')
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')

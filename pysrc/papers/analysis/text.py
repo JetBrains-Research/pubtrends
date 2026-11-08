@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 # nltk wordnet
 NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 
+def paper_text(title, abstract):
+    # Title or abstract may be NULL, don't embed literal 'None'
+    return '. '.join(p.strip() for p in (title, abstract) if p and str(p).strip() and str(p) != 'None')
+
 # Lock to support multithreading for NLTK
 # See https://github.com/nltk/nltk/issues/1576
 NLTK_LOCK = Lock()
