@@ -233,6 +233,27 @@ class PubtrendsConfig:
         self.ss_enabled = params.getboolean('ss_enabled')
         self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
+        # Lucene / Whoosh index config
+        self.pm_lucene_index_path = os.path.expanduser(params.get('pm_lucene_index_path', '~/.pubtrends/pm_lucene_index'))
+        self.ss_lucene_index_path = os.path.expanduser(params.get('ss_lucene_index_path', '~/.pubtrends/ss_lucene_index'))
+        self.bm25_k1 = float(params.get('bm25_k1', '1.2'))
+        self.bm25_b = float(params.get('bm25_b', '0.75'))
+
+        # Override with test / custom parameters
+        if override:
+            if 'pm_lucene_index_path' in override:
+                self.pm_lucene_index_path = os.path.expanduser(override['pm_lucene_index_path'])
+            if 'ss_lucene_index_path' in override:
+                self.ss_lucene_index_path = os.path.expanduser(override['ss_lucene_index_path'])
+            if 'bm25_k1' in override:
+                self.bm25_k1 = float(override['bm25_k1'])
+            if 'bm25_b' in override:
+                self.bm25_b = float(override['bm25_b'])
+
+        for key, val in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, val)
+
         # Model name used for embeddings
         self.sentence_transformer_model = params['sentence_transformer_model']
         self.embeddings_model_name = re.sub('[^a-zA-Z0-9]+', '_', self.sentence_transformer_model)

@@ -1,5 +1,6 @@
 import json
 
+from pysrc.papers.db.lucene_searcher import LuceneIndexManager
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 
@@ -8,6 +9,7 @@ class SemanticScholarPostgresWriter(PostgresConnector):
 
     def __init__(self, config):
         super(SemanticScholarPostgresWriter, self).__init__(config, readonly=False)
+        self.lucene_manager = LuceneIndexManager(config.ss_lucene_index_path, config.bm25_k1, config.bm25_b)
 
     def init_semantic_scholar_database(self):
         self.check_connection()
@@ -27,7 +29,6 @@ class SemanticScholarPostgresWriter(PostgresConnector):
 
         query_publications = '''
                     drop index if exists sspublications_crc32id_index;
-                    drop index if exists SSPublications_tsv;
                     drop index if exists sspublications_doi_index;
                     drop table if exists sspublications;
                     create table sspublications(
@@ -41,9 +42,7 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                         doi     varchar(100),
                         aux     jsonb
                     );
-                    ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);
-                    create index if not exists SSPublications_tsv on SSPublications using gin(tsv);
                     create index if not exists sspublications_doi_index on sspublications using hash(doi);
                     CREATE INDEX IF NOT EXISTS sspublications_crc32id_year ON sspublications (crc32id, year);
                     '''
@@ -68,8 +67,11 @@ class SemanticScholarPostgresWriter(PostgresConnector):
             cursor.execute(query_publications)
             cursor.execute(query_create_matview)
             self.postgres_connection.commit()
+        self.lucene_manager.reset()
 
     def insert_semantic_scholar_publications(self, articles):
+        if not articles:
+            return
         # For some reason SemanticScholarArticle doesn't have abstract field
         articles_vals = ', '.join(
             str((a.ssid, a.crc32id, a.title, a.year, '',
@@ -78,14 +80,11 @@ class SemanticScholarPostgresWriter(PostgresConnector):
         )
         query = f'''
             insert into sspublications(ssid, crc32id, title, year, abstract, doi, aux) values {articles_vals};
-            update sspublications
-            set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-                setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
-            WHERE (crc32id, ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(a.ssid for a in articles)});
             '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             self.postgres_connection.commit()
+        self.lucene_manager.insert_semantic_scholar_articles(articles)
 
     def insert_semantic_scholar_citations(self, citations):
         citations_vals = ', '.join(

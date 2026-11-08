@@ -25,14 +25,15 @@ With PubTrends, you can:
 
 # Technical Architecture
 
-PubTrends is a Python / Kotlin + JavaScript web service with a PostgreSQL backend.
+PubTrends is a Python / Kotlin + JavaScript web service with a PostgreSQL backend and Whoosh full-text search.
 It uses:
 * Languages: [Python](https://www.python.org/) + [Kotlin](https://kotlinlang.org/) + [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 * Backend: [Nginx](https://nginx.org/en/index.html) + [Flask](https://flask.palletsprojects.com/en/stable/) + [Gunicorn](https://gunicorn.org/)
 * Task Queue: [Celery](https://docs.celeryq.dev/en/stable/index.html) + [Redis](https://redis.io/)
 * DataBase: [Postgres](https://www.postgresql.org/) + [Postgres pgvector](https://github.com/pgvector/pgvector) + [Psycopg2](https://www.psycopg.org/docs/) + [Kotlin ORM](https://www.jetbrains.com/exposed/)
+* Text Search: [Whoosh](https://whoosh.readthedocs.io/) (BM25 full-text indexing for titles, abstracts, keywords, and MeSH terms)
+* Semantic Search: [Sentence-Transformers](https://www.sbert.net/) + [Faiss](https://github.com/facebookresearch/faiss)
 * Data Analysis: [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Scikit-learn](https://scikit-learn.org/stable/index.html#)
-* Semantic Search: [Sentence-Tranformers](https://www.sbert.net/) + [Faiss](https://github.com/facebookresearch/faiss)
 * NLP: [NLTK](https://www.nltk.org/), [SpaCy](https://spacy.io/), [GenSim](https://radimrehurek.com/gensim/models/word2vec.html), [Fasttext](https://fasttext.cc/)
 * Visualization: [Bokeh](https://bokeh.org/), [Holoviews](https://holoviews.org/), [Seaborn](https://seaborn.pydata.org/), [Matplotlib](https://matplotlib.org/)
 * Frontend: [Bootstrap](https://getbootstrap.com/), [jQuery](https://jquery.com/), [Cytoscape.js](https://js.cytoscape.org/)
@@ -44,17 +45,27 @@ See [pyproject.toml](pyproject.toml) for the full list of libraries used in the 
 # Getting Started
 
 For detailed information, see:
-* [DATABASE.md](docs/DATABASE.md) - Database setup and data loading
+* [DATABASE.md](docs/DATABASE.md) - Database setup, text search indexing, and data loading
 * [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Development environment, testing, and deployment
 * [CHANGES.md](docs/CHANGES.md) - Version history and changelog
 
 ## Quick Start
 
-1. Copy and modify `config.properties` to `~/.pubtrends/config.properties` with your database credentials.
+1. Copy and modify `config.properties` to `~/.pubtrends/config.properties` with your database credentials and index paths (`pm_lucene_index_path`, `ss_lucene_index_path`).
 
-2. Set up the database - see [DATABASE.md](docs/DATABASE.md) for detailed instructions.
+2. Set up the database and search indexes - see [DATABASE.md](docs/DATABASE.md) for detailed instructions.
 
-3. Set up development environment - see [DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed instructions.
+3. Build the project JAR package:
+   ```bash
+   ./gradlew clean shadowJar
+   ```
+
+4. Run the comprehensive update pipeline (fetches publications, syncs BM25 text search index, computes embeddings, and updates FAISS vector indexes):
+   ```bash
+   ./update.sh
+   ```
+
+5. Set up development or production web services - see [DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed instructions.
 
 # Authors
 

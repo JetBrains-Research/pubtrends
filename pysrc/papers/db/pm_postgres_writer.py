@@ -1,5 +1,6 @@
 import json
 
+from pysrc.papers.db.lucene_searcher import LuceneIndexManager
 from pysrc.papers.db.postgres_connector import PostgresConnector
 
 
@@ -7,6 +8,7 @@ class PubmedPostgresWriter(PostgresConnector):
 
     def __init__(self, config):
         super(PubmedPostgresWriter, self).__init__(config, readonly=False)
+        self.lucene_manager = LuceneIndexManager(config.pm_lucene_index_path, config.bm25_k1, config.bm25_b)
 
     def init_pubmed_database(self):
         self.check_connection()
@@ -42,9 +44,6 @@ class PubmedPostgresWriter(PostgresConnector):
                     create index if not exists PMPublications_pmid_index on PMPublications using hash(pmid);
                     create index if not exists PMPublications_doi_index on PMPublications using hash(doi); 
                     
-                    ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
-                    create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
-                    
                     CREATE INDEX IF NOT EXISTS pmpublications_pmid_year ON pmpublications (pmid, year);
                     '''
 
@@ -68,9 +67,11 @@ class PubmedPostgresWriter(PostgresConnector):
             cursor.execute(query_publications)
             cursor.execute(query_create_matview)
             self.postgres_connection.commit()
+        self.lucene_manager.reset()
 
     def insert_pubmed_publications(self, articles):
-        ids_vals = ','.join(f'({a.pmid})' for a in articles)
+        if not articles:
+            return
         articles_vals = ', '.join(
             str((a.pmid, a.title, a.year, a.abstract or '',
                  a.type, ','.join(a.keywords), ','.join(a.mesh),
@@ -81,14 +82,11 @@ class PubmedPostgresWriter(PostgresConnector):
         query = f'''
             insert into PMPublications(pmid, title, year, abstract, type, keywords, mesh, doi, aux)
                 values {articles_vals};
-            update PMPublications
-                set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-                    setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
-                WHERE pmid IN (VALUES {ids_vals});
             '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             self.postgres_connection.commit()
+        self.lucene_manager.insert_pubmed_articles(articles)
 
     def insert_pubmed_citations(self, citations):
         citations_vals = ', '.join(f"({c[0]}, {c[1]})" for c in citations)
@@ -102,6 +100,8 @@ class PubmedPostgresWriter(PostgresConnector):
             self.postgres_connection.commit()
 
     def delete(self, ids):
+        if not ids:
+            return
         ids_vals = ','.join(f'({i})' for i in ids)
         query = f'''
                 DELETE FROM PMCitations
@@ -114,3 +114,4 @@ class PubmedPostgresWriter(PostgresConnector):
             cursor.execute(query)
             cursor.execute(query_update_matview)
             self.postgres_connection.commit()
+        self.lucene_manager.delete(ids)

@@ -26,6 +26,10 @@ SEED = 19700101
 logger = logging.getLogger(__name__)
 
 
+class SearchError(Exception):
+    pass
+
+
 def reorder_publications(ids, pub_df):
     ids_order = {str(pid): index for index, pid in enumerate(ids)}
     sort_ord = np.argsort([ids_order[pid] for pid in pub_df['id']])

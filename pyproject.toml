@@ -55,6 +55,7 @@ dependencies = [
     "transformers",
     "optimum[onnxruntime]",
     "onnxruntime",
+    "whoosh",
     "setuptools<70"
 ]
 

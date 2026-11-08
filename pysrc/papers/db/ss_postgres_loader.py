@@ -10,9 +10,9 @@ import psycopg2
 from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMBER_OF_COCITATIONS, \
     MAX_SEARCH_TIME_SEC
 from pysrc.papers.db.loader import Loader
+from pysrc.papers.db.lucene_searcher import LuceneIndexManager
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_cocitations_postgres, preprocess_quotes, strs_to_vals
+from pysrc.papers.db.postgres_utils import process_cocitations_postgres, preprocess_quotes, strs_to_vals
 from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 class SemanticScholarPostgresLoader(PostgresConnector, Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarPostgresLoader, self).__init__(pubtrends_config)
+        self.lucene_searcher = LuceneIndexManager(pubtrends_config.ss_lucene_index_path,
+                                                  pubtrends_config.bm25_k1,
+                                                  pubtrends_config.bm25_b)
 
     @staticmethod
     def ids2values(ids):
@@ -74,19 +77,24 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         titles2search = self.titles_to_list(titles)
         pids = []
         for t in titles2search:
-            query = f'''
-                SELECT ssid
-                FROM to_tsquery(\'''{t}\''') query, SSPublications P
-                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{t}');
-            '''
-            logger.debug(f'find query: {query[:1000]}')
-            with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
-                df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
-                if len(df) > 0:
-                    pids.extend(df['pmid'].astype(str))
-                else:
-                    pids.extend(self._search_title_relaxed(t))
+            candidate_ids = self.lucene_searcher.search_title(t, limit=100)
+            if candidate_ids:
+                vals = strs_to_vals(candidate_ids)
+                query = f'''
+                    SELECT ssid
+                    FROM SSPublications P
+                    WHERE ssid in (VALUES {vals}) AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER(%s);
+                '''
+                logger.debug(f'find query: {query[:1000]}')
+                with self.postgres_connection.cursor() as cursor:
+                    cursor.execute(query, (t,))
+                    df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+                    if len(df) > 0:
+                        pids.extend(df['pmid'].astype(str))
+                    else:
+                        pids.extend(self._search_title_relaxed(t))
+            else:
+                pids.extend(self._search_title_relaxed(t))
         return pids
 
     def search(self, query, limit=None, sort=None, noreviews=True, min_year=None, max_year=None):
@@ -94,81 +102,60 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
 
-        # Add year filters
-        min_year = int(min_year) if min_year else 1900
-        max_year = int(max_year) if max_year else datetime.now().year
-        year_filter = f'year BETWEEN {min_year} AND {max_year}'
+        min_year = int(min_year) if min_year else None
+        max_year = int(max_year) if max_year else None
 
-
-        logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
-        query_str, exact_phrase_filter = preprocess_search_query_for_postgres(query)
-        if exact_phrase_filter:
-            exact_phrase_filter = f'AND ({exact_phrase_filter})'
-
-        by_citations = 'count DESC NULLS LAST'
-        by_year = 'year DESC NULLS LAST'
-        # 2 divides the rank by the document length
-        # 4 divides the rank by the mean harmonic distance between extents (this is implemented only by ts_rank_cd)
-        # See https://www.postgresql.org/docs/12/textsearch-controls.html#TEXTSEARCH-RANKING
-        if sort == SORT_MOST_CITED:
-            order = f'{by_citations}, ts_rank_cd(tsv, query, 2|4) DESC, {by_year}'
-        elif sort == SORT_MOST_RECENT:
-            order = f'{by_year}, ts_rank_cd(tsv, query, 2|4) DESC, {by_citations}'
-        elif sort is None:
-            order = 'ts_rank_cd(tsv, query, 2|4) DESC'
-        else:
+        if sort not in (None, SORT_MOST_CITED, SORT_MOST_RECENT):
             raise ValueError(f'Illegal sort method: {sort}')
 
-        df = None
-        sampling_fraction = 1
-        sampling_filter = ''
-
-        def cancel_query():
-            nonlocal df
-            if df is None:
-                self.postgres_connection.cancel()
-
-        while df is None:
-            query = f'''
-            WITH X AS
-                (SELECT P.ssid as ssid, P.crc32id as crc32id, P.tsv as tsv, query, P.year as year
-                FROM to_tsquery('{query_str}') query, 
-                SSPublications P {sampling_filter}
-                WHERE {year_filter} AND P.tsv @@ query {exact_phrase_filter}
-                LIMIT {MAX_NUMBER_OF_PAPERS})
-            SELECT X.ssid as ssid 
-            FROM X
-            LEFT JOIN matview_sscitations C 
-            ON C.ssid = X.ssid AND C.crc32id = X.crc32id
-            ORDER BY {order}, ssid
-            LIMIT {limit};
+        if sort == SORT_MOST_CITED:
+            candidate_ids = self.lucene_searcher.search(
+                query,
+                limit=MAX_NUMBER_OF_PAPERS,
+                sort=None,
+                noreviews=False,
+                min_year=min_year,
+                max_year=max_year
+            )
+            if not candidate_ids:
+                return []
+            vals = strs_to_vals(candidate_ids)
+            query_sql = f'''
+                SELECT P.ssid, COALESCE(C.count, 0) as cit_count, P.year
+                FROM SSPublications P
+                LEFT JOIN matview_sscitations C 
+                ON C.ssid = P.ssid AND C.crc32id = P.crc32id
+                WHERE P.ssid IN (VALUES {vals});
             '''
-            logger.debug(f'search query: {query[:1000]}')
             with self.postgres_connection.cursor() as cursor:
-                try:
-                    # Wait for execution
-                    timer = threading.Timer(MAX_SEARCH_TIME_SEC, cancel_query)
-                    timer.start()
-                    cursor.execute(query)
-                    df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
-                    timer.cancel()
-                except psycopg2.extensions.QueryCanceledError:
-                    sampling_fraction /= 10
-                    logger.warning(f'search query timeout, increasing sampling fraction {sampling_fraction}')
-                    sampling_filter = f'TABLESAMPLE SYSTEM({sampling_fraction})'
-                    if exact_phrase_filter:
-                        logger.warning(f'disabling exact phrase filter')
-                        query_str = query_str.replace('<->', '|')
-                        exact_phrase_filter=''
-                finally:
-                    # TODO [shpynov] query stays idle in transaction without this commit
-                    # Further investigation is required
-                    self.postgres_connection.commit()
+                cursor.execute(query_sql)
+                rows = cursor.fetchall()
+                df = pd.DataFrame(rows, columns=['ssid', 'cit_count', 'year'])
+            if len(df) == 0:
+                return []
+            df.drop_duplicates(subset='ssid', inplace=True)
+            order_map = {ssid: i for i, ssid in enumerate(candidate_ids)}
+            df['rank'] = df['ssid'].map(order_map)
+            df.sort_values(by=['cit_count', 'rank', 'year'], ascending=[False, True, False], inplace=True)
+            if limit is not None:
+                df = df.iloc[:limit]
+            return list(df['ssid'].astype(str))
 
-        # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
-        df.drop_duplicates(subset='id', inplace=True)
-
-        return df['id'].to_list()
+        result_ids = self.lucene_searcher.search(
+            query,
+            limit=limit,
+            sort=sort,
+            noreviews=False,
+            min_year=min_year,
+            max_year=max_year
+        )
+        seen = set()
+        unique_ids = []
+        for rid in result_ids:
+            if rid not in seen:
+                seen.add(rid)
+                unique_ids.append(rid)
+        return unique_ids
 
     def load_publications(self, ids):
         self.check_connection()
