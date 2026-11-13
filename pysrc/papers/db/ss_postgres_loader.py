@@ -115,7 +115,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 sort=None,
                 noreviews=False,
                 min_year=min_year,
-                max_year=max_year
+                max_year=max_year,
             )
             if not candidate_ids:
                 return []
@@ -123,7 +123,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             query_sql = f'''
                 SELECT P.ssid, COALESCE(C.count, 0) as cit_count, P.year
                 FROM SSPublications P
-                LEFT JOIN matview_sscitations C 
+                LEFT JOIN matview_sscitations C
                 ON C.ssid = P.ssid AND C.crc32id = P.crc32id
                 WHERE P.ssid IN (VALUES {vals});
             '''
@@ -147,7 +147,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             sort=sort,
             noreviews=False,
             min_year=min_year,
-            max_year=max_year
+            max_year=max_year,
         )
         seen = set()
         unique_ids = []
@@ -242,7 +242,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 SELECT count
                 FROM SSPublications P
                     LEFT JOIN matview_sscitations C
-                    ON C.crc32id = P.crc32id and C.ssid = P.ssid 
+                    ON C.crc32id = P.crc32id and C.ssid = P.ssid
                 WHERE (P.crc32id, P.ssid) in (VALUES {vals});
                 '''
 
@@ -325,7 +325,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {vals})
                     AND (C.crc32id_out, C.ssid_out) NOT IN (VALUES {vals})
             )
-            SELECT X.ssid, count 
+            SELECT X.ssid, count
                 FROM X
                     LEFT JOIN matview_sscitations C
                     ON X.ssid = C.ssid AND X.crc32id = C.crc32id

@@ -39,6 +39,8 @@ It uses:
 * Deployment: [Docker Compose](https://docs.docker.com/compose/)
 * Testing: [PyTest](https://docs.pytest.org/en/stable/) + [Testcontainers](https://testcontainers.com/) + [Flake8](https://flake8.pycqa.org/en/latest/) + [JUnit](https://junit.org/) + [TeamCity](https://www.jetbrains.com/teamcity/)
 
+When the MeSH vocabulary is available, simple PubMed searches automatically expand to include synonyms and narrower terms; Semantic Scholar searches remain literal. See [DATABASE.md](docs/DATABASE.md#mesh-search-term-expansion) for vocabulary updates and configuration.
+
 See [pyproject.toml](pyproject.toml) for the full list of libraries used in the project.
 
 # Getting Started

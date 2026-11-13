@@ -99,6 +99,10 @@ retry_command() {
     done
 }
 
+# Keep the shared MeSH vocabulary current without changing the numbered update stages.
+log "Updating MeSH vocabulary..."
+retry_command 3 10 uv run python pysrc/preprocess/update_mesh.py
+
 CURRENT_STAGE=$(get_stage)
 log "Starting Pubtrends Update Pipeline from Stage ${CURRENT_STAGE}"
 

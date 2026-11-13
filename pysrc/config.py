@@ -238,6 +238,7 @@ class PubtrendsConfig:
         self.ss_lucene_index_path = os.path.expanduser(params.get('ss_lucene_index_path', '~/.pubtrends/ss_lucene_index'))
         self.bm25_k1 = float(params.get('bm25_k1', '1.2'))
         self.bm25_b = float(params.get('bm25_b', '0.75'))
+        self.mesh_query_expansion = params.getboolean('mesh_query_expansion', fallback=True)
 
         # Override with test / custom parameters
         if override:

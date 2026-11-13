@@ -11,6 +11,7 @@ from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMB
     MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING, MAX_SEARCH_TIME_SEC
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.lucene_searcher import LuceneIndexManager
+from pysrc.papers.db.mesh_terms import MeshTermExpander
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import process_bibliographic_coupling_postgres, \
     process_cocitations_postgres, ints_to_vals, to_int_list
@@ -23,6 +24,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def __init__(self, config):
         super(PubmedPostgresLoader, self).__init__(config)
         self.lucene_searcher = LuceneIndexManager(config.pm_lucene_index_path, config.bm25_k1, config.bm25_b)
+        self.mesh_term_expander = MeshTermExpander(
+            lambda: self.postgres_connection,
+            enabled=config.mesh_query_expansion,
+        )
 
 
     UPDATE_LAST_PATH = os.path.expanduser('~/.pubtrends/pubmedpostgreswriter_last.tsv')
@@ -111,7 +116,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 sort=None,
                 noreviews=noreviews,
                 min_year=min_year,
-                max_year=max_year
+                max_year=max_year,
+                query_expander=self.mesh_term_expander,
             )
             if not candidate_ids:
                 return []
@@ -141,7 +147,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             sort=sort,
             noreviews=noreviews,
             min_year=min_year,
-            max_year=max_year
+            max_year=max_year,
+            query_expander=self.mesh_term_expander,
         )
 
     def load_publications(self, ids):
@@ -198,10 +205,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         query = f'''
                 SELECT C.pmid_in AS pmid
-                FROM PMCitations C 
+                FROM PMCitations C
                 JOIN matview_pmcitations MC
                     ON C.pmid_in = MC.pmid
-                WHERE C.pmid_in != C.pmid_out AND 
+                WHERE C.pmid_in != C.pmid_out AND
                 C.pmid_out = ANY (%s)
                 ORDER BY MC.count DESC NULLS LAST
                 LIMIT %s;
@@ -233,8 +240,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         query = f'''SELECT DISTINCT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
-                    WHERE pmid_out != pmid_in AND 
-                    pmid_in = ANY (%s) AND 
+                    WHERE pmid_out != pmid_in AND
+                    pmid_in = ANY (%s) AND
                     pmid_out = ANY (%s)
                     ORDER BY id_out, id_in
                     LIMIT %s;

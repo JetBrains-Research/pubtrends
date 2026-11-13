@@ -152,6 +152,28 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 python pysrc/preprocess/update_embeddings.py
 ```
 
+### MeSH Search-Term Expansion
+
+PubMed searches automatically expand a simple, unquoted positive query with matching MeSH entry
+terms and narrower descriptor headings. Semantic Scholar searches are not expanded. The expansion
+uses the shared PostgreSQL vocabulary; if the tables are absent or unavailable, PubMed search
+falls back to the literal query. Set `mesh_query_expansion = false` in
+`~/.pubtrends/config.properties` to disable expansion.
+
+Load the latest NLM release manually, or load a local descriptor file:
+
+```bash
+uv run python pysrc/preprocess/update_mesh.py
+uv run python pysrc/preprocess/update_mesh.py --file ~/Downloads/d2026.bin --year 2026
+```
+
+Supplementary concepts are optional because they mostly contain chemical names. Add
+`--supplementary` to download the matching `c<year>.bin`, or use `--supplementary-file` to load a
+local copy. A release year already loaded is skipped; use `--force` to reload it. The updater
+stages records and replaces the active tables in one transaction, so download, parsing, or
+database failures preserve the previous vocabulary. `update.sh` checks for new releases before
+its regular numbered update stages.
+
 ## Deployment
 
 ### PostgreSQL for Production

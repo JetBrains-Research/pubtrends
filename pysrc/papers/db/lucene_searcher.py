@@ -145,9 +145,12 @@ class LuceneIndexManager:
         sort: Optional[str] = None,
         noreviews: bool = True,
         min_year: Optional[int] = None,
-        max_year: Optional[int] = None
+        max_year: Optional[int] = None,
+        query_expander=None,
     ) -> List[str]:
         q = self.parse_query(query_str)
+        if query_expander is not None:
+            q = query_expander.expand(query_str, q)
         ix = self.get_index()
 
         filter_query = None
